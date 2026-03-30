@@ -1,0 +1,41 @@
+.table-container {
+  overflow-x: auto;
+}
+
+.filter-input {
+  width: 80px;
+  font-size: 0.75rem;
+}
+
+.sort-icon {
+  cursor: pointer;
+  user-select: none;
+}
+
+.sort-icon:hover {
+  opacity: 0.7;
+}
+
+th.sortable {
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+th.sortable:hover {
+  background-color: #f5f5f5;
+}
+
+.pool-row-hidden {
+  display: none;
+}
+
+.controls-bar {
+  margin-bottom: 1.5rem;
+}
+
+.loading-overlay {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 3rem;
+}
