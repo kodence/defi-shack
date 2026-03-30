@@ -4,7 +4,6 @@ import { useMemo, useState, useCallback } from "react";
 import { Pool } from "@/types/pool";
 import { ROWS_PER_PAGE, MAX_DISPLAY_ROWS } from "@/utils/constants";
 import TableHeader from "./TableHeader";
-import FilterRow from "./FilterRow";
 import PoolRow from "./PoolRow";
 import Pagination from "./Pagination";
 import { useFilters } from "@/hooks/useFilters";
@@ -22,13 +21,13 @@ export default function PoolTable({ pools, hideFiltered }: PoolTableProps) {
   const { filters, setFilter, applyFilters } = useFilters();
   const { sortColumn, sortDirection, toggleSort, applySorting } = useSorting();
 
-  const handleCheckChange = useCallback((poolId: string, checked: boolean) => {
+  const handleSelect = useCallback((poolId: string) => {
     setCheckedIds((prev) => {
       const next = new Set(prev);
-      if (checked) {
-        next.add(poolId);
-      } else {
+      if (next.has(poolId)) {
         next.delete(poolId);
+      } else {
+        next.add(poolId);
       }
       return next;
     });
@@ -88,10 +87,10 @@ export default function PoolTable({ pools, hideFiltered }: PoolTableProps) {
             checked={showOnlyChecked}
             onChange={(e) => setShowOnlyChecked(e.target.checked)}
           />{" "}
-          Show only checked pools
+          Show only selected pools
         </label>
         {checkedIds.size > 0 && (
-          <span className="tag is-info is-light">{checkedIds.size} checked</span>
+          <span className="tag is-info is-light">{checkedIds.size} selected</span>
         )}
       </div>
 
@@ -102,8 +101,9 @@ export default function PoolTable({ pools, hideFiltered }: PoolTableProps) {
               sortColumn={sortColumn}
               sortDirection={sortDirection}
               onSort={toggleSort}
+              filters={filters}
+              onFilterChange={setFilter}
             />
-            <FilterRow filters={filters} onFilterChange={setFilter} />
           </thead>
           <tbody>
             {rowsToRender.map((pool) => {
@@ -114,14 +114,14 @@ export default function PoolTable({ pools, hideFiltered }: PoolTableProps) {
                   key={pool.id}
                   pool={pool}
                   dimmed={dimmed}
-                  checked={checkedIds.has(pool.id)}
-                  onCheckChange={handleCheckChange}
+                  selected={checkedIds.has(pool.id)}
+                  onSelect={handleSelect}
                 />
               );
             })}
             {rowsToRender.length === 0 && (
               <tr>
-                <td colSpan={10} className="has-text-centered">
+                <td colSpan={9} className="has-text-centered">
                   No pools match the current filters.
                 </td>
               </tr>

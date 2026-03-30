@@ -1,5 +1,5 @@
 export const API_BASE_URL = "http://localhost:3001";
-export const ROWS_PER_PAGE = 20;
+export const ROWS_PER_PAGE = 15;
 export const MAX_PAGES = 5;
 export const MAX_DISPLAY_ROWS = ROWS_PER_PAGE * MAX_PAGES; // 100
 
@@ -43,3 +43,15 @@ export const NETWORKS = [
 export const EXCHANGES = [
   { key: "uniswap-v3", label: "Uniswap V3" },
 ] as const;
+
+// Icon mapping — drop SVG/PNG files into frontend/public/icons/
+// File names must match the values below (e.g. ethereum.svg, uniswap-v3.svg)
+export const NETWORK_ICONS: Record<string, string> = {
+  ethereum: "/icons/ethereum.png",
+  arbitrum: "/icons/arbitrum.png",
+  base: "/icons/base.png",
+};
+
+export const EXCHANGE_ICONS: Record<string, string> = {
+  "uniswap-v3": "/icons/uniswap-v3.png",
+};

@@ -3,8 +3,51 @@
 }
 
 .filter-input {
-  width: 80px;
+  width: 100%;
   font-size: 0.75rem;
+}
+
+.filter-icon {
+  display: inline-block;
+  margin-left: 4px;
+  cursor: pointer;
+  font-size: 0.7rem;
+  opacity: 0.4;
+  vertical-align: middle;
+  user-select: none;
+}
+
+.filter-icon:hover {
+  opacity: 0.8;
+}
+
+.filter-icon.filter-active {
+  opacity: 1;
+  color: #3273dc;
+}
+
+.filter-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 20;
+  background: #1a1a1a;
+  color: #fff;
+  border: 1px solid #444;
+  border-radius: 4px;
+  padding: 0.75rem;
+  min-width: 180px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.filter-dropdown .label {
+  color: #ccc;
+}
+
+.filter-dropdown .input {
+  background: #2a2a2a;
+  border-color: #555;
+  color: #fff;
 }
 
 .sort-icon {
@@ -22,7 +65,20 @@ th.sortable {
 }
 
 th.sortable:hover {
-  background-color: #f5f5f5;
+  background-color: #363636;
+  color: #fff;
+}
+
+.row-selected {
+  background-color: #3273dc !important;
+  color: #fff;
+}
+
+.cell-icon {
+  width: 16px;
+  height: 16px;
+  margin-right: 4px;
+  vertical-align: middle;
 }
 
 .pool-row-hidden {
