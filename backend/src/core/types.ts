@@ -21,7 +21,6 @@ export interface SimulationConfig {
   lowerPrice:     number;
   upperPrice:     number;
   investmentUsd:  number;
-  projectionDays: number;
 }
 
 // ── Computed metrics ──────────────────────────────────────────────────────────
@@ -62,9 +61,12 @@ export interface ScenarioRow {
   isCurrent:       boolean;
 }
 
-export interface ProjectionPoint {
-  day:               number;
-  cumulativeFeesUsd: number;
+export interface TvlDayData {
+  dayIndex:      number;
+  timestampUnix: number;
+  tvlUsd:        number;
+  feesUsd:       number;
+  volumeUsd:     number;
 }
 
 // ── APR History ───────────────────────────────────────────────────────────────
@@ -101,7 +103,7 @@ export interface SimulationResult {
   metrics:      PositionMetrics;
   rangeChart:   ChartPoint[];
   scenarios:    ScenarioRow[];
-  projection:   ProjectionPoint[];
+  tvlHistory:   TvlDayData[];
   aprHistory:   AprHistoryResult;
   priceHistory: PriceCandle[];
 }

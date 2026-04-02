@@ -8,3 +8,10 @@
 .ld  { width: 18px; height: 0; border-top: 2px dashed; flex-shrink: 0; display: inline-block; }
 .rangeFill { width: 14px; height: 10px; background: rgba(56,139,253,.15); border-radius: 2px; flex-shrink: 0; display: inline-block; }
 .dragHint { font-size: 10px; color: var(--tm); margin-left: auto; }
+.tooltip {
+  position: absolute; pointer-events: none; z-index: 50;
+  background: rgba(13,17,23,.92); border: 1px solid var(--border);
+  border-radius: 6px; padding: 6px 10px;
+  font-size: 11px; line-height: 1.5; color: #c9d1d9;
+  white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,.4);
+}

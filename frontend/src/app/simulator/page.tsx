@@ -6,8 +6,6 @@ import ConfigPanel     from "@/components/simulator/ConfigPanel";
 import MetricCards     from "@/components/simulator/MetricCards";
 import RangeChart      from "@/components/simulator/RangeChart";
 import ScenarioTable   from "@/components/simulator/ScenarioTable";
-import ProjectionChart from "@/components/simulator/ProjectionChart";
-import AprHistory      from "@/components/simulator/AprHistory";
 import PriceChart      from "@/components/simulator/PriceChart";
 import Toast, { useToast } from "@/components/simulator/Toast";
 import styles from "./page.module.css";
@@ -89,7 +87,6 @@ export default function SimulatorPage() {
         volume24hUsd:   Math.max(patch.volume24hUsd   ?? prev.volume24hUsd,   0),
         lowerPrice:     Math.max(lo, 1e-12),
         upperPrice:     hi > lo ? hi : lo * 1.0001,
-        projectionDays: Math.max(patch.projectionDays ?? prev.projectionDays, 1),
       };
       scheduleSimulate(next);
       return next;
@@ -149,25 +146,23 @@ export default function SimulatorPage() {
             <>
               <MetricCards m={m} />
               <div className={styles.chartRow}>
-                <PriceChart candles={result.priceHistory} cfg={cfg} onChange={handleChange} />
-                <RangeChart data={result.rangeChart} cfg={cfg} />
-              </div>
-              <div className={styles.bottomRow}>
-                <ScenarioTable rows={result.scenarios} preset={result.preset} />
-                <ProjectionChart
-                  pts={result.projection}
-                  metrics={m}
-                  days={cfg.projectionDays}
+                <PriceChart
+                  candles={result.priceHistory}
+                  cfg={cfg}
+                  tvlHistory={result.tvlHistory}
+                  aprHistory={result.aprHistory}
+                  onChange={handleChange}
                 />
+                <div className={styles.rightCol}>
+                  <RangeChart data={result.rangeChart} cfg={cfg} />
+                  <ScenarioTable rows={result.scenarios} preset={result.preset} />
+                </div>
               </div>
-              <AprHistory data={result.aprHistory} />
             </>
           ) : (
             <div className={styles.skeleton}>
               <div className={styles.skRow4} />
-              <div className={styles.skFull} />
               <div className={styles.skHalf2} />
-              <div className={styles.skFull} />
             </div>
           )}
         </main>

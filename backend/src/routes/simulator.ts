@@ -19,7 +19,7 @@ router.get("/presets/:id/default", (req: Request<{ id: string }>, res: Response)
   const cfg: SimulationConfig = {
     presetId: preset.id, currentPrice: preset.defaultPrice,
     volume24hUsd: preset.defaultVolume, lowerPrice: pa, upperPrice: pb,
-    investmentUsd: 10_000, projectionDays: 90,
+    investmentUsd: 10_000,
   };
   return res.json(cfg);
 });
@@ -44,7 +44,6 @@ router.post("/simulate", (req: Request, res: Response) => {
     lowerPrice:     body.lowerPrice,
     upperPrice:     body.upperPrice,
     investmentUsd:  body.investmentUsd,
-    projectionDays: Math.max(1, Math.min(730, body.projectionDays ?? 90)),
   };
 
   try {

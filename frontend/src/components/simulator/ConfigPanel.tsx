@@ -156,18 +156,6 @@ export default function ConfigPanel({
             </div>
           </div>
 
-          <label className={styles.fg}>
-            <span className={styles.fl}>Projection horizon</span>
-            <select className={styles.fsel}
-              value={cfg.projectionDays}
-              onChange={e => onChange({ projectionDays: +e.target.value })}>
-              <option value={30}>30 days</option>
-              <option value={60}>60 days</option>
-              <option value={90}>90 days</option>
-              <option value={180}>180 days</option>
-              <option value={365}>1 year</option>
-            </select>
-          </label>
         </div>
       </div>
 

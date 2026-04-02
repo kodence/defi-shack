@@ -1,6 +1,6 @@
 import {
   SimulationConfig, SimulationResult, PositionMetrics,
-  ChartPoint, ScenarioRow, ProjectionPoint, AprHistoryResult, DailyAprSample,
+  ChartPoint, ScenarioRow, TvlDayData, AprHistoryResult, DailyAprSample,
   PriceCandle,
 } from "./types";
 import { PRESET_MAP } from "./presets";
@@ -75,11 +75,29 @@ export function buildScenarios(cfg: SimulationConfig, m: PositionMetrics): Scena
   });
 }
 
-// ── Time projection ───────────────────────────────────────────────────────────
-export function buildProjection(cfg: SimulationConfig, m: PositionMetrics): ProjectionPoint[] {
-  return Array.from({ length: cfg.projectionDays + 1 }, (_, d) => ({
-    day: d, cumulativeFeesUsd: d * m.dailyFeesUsd,
-  }));
+// ── TVL history (synthetic 30-day) ────────────────────────────────────────────
+export function buildTvlHistory(cfg: SimulationConfig): TvlDayData[] {
+  const preset  = PRESET_MAP.get(cfg.presetId)!;
+  const feeRate = preset.feeTier / 1_000_000;
+  const now     = Math.floor(Date.now() / 1000);
+  const DAY     = 86_400;
+
+  let seed = 54321;
+  const lcg = () => { seed = (seed * 1664525 + 1013904223) & 0x7fffffff; return seed / 0x7fffffff; };
+
+  const samples: TvlDayData[] = [];
+  for (let i = 0; i < 30; i++) {
+    const tvlScale = 0.8 + lcg() * 0.4;
+    const volScale = 0.7 + lcg() * 0.6;
+    const tvlUsd   = preset.tvlUsd * tvlScale;
+    const volUsd   = cfg.volume24hUsd * volScale;
+    const feesUsd  = volUsd * feeRate;
+    samples.push({
+      dayIndex: i, timestampUnix: now - (29 - i) * DAY,
+      tvlUsd, feesUsd, volumeUsd: volUsd,
+    });
+  }
+  return samples;
 }
 
 // ── 30-day APR history (Approach B — volume-based) ────────────────────────────
@@ -177,7 +195,7 @@ export function runSimulation(cfg: SimulationConfig): SimulationResult {
     preset, config: cfg, metrics,
     rangeChart:   buildRangeChart(cfg, metrics),
     scenarios:    buildScenarios(cfg, metrics),
-    projection:   buildProjection(cfg, metrics),
+    tvlHistory:   buildTvlHistory(cfg),
     aprHistory:   buildAprHistory(cfg, metrics),
     priceHistory: buildPriceHistory(cfg),
   };

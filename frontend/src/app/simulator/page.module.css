@@ -42,8 +42,8 @@
 .main::-webkit-scrollbar { width: 4px; }
 .main::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-.chartRow  { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-.bottomRow { display: grid; grid-template-columns: 1.05fr .95fr; gap: 14px; }
+.chartRow  { display: grid; grid-template-columns: 9fr 4fr; gap: 14px; }
+.rightCol  { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 .loadingMsg { color: var(--tm); font-size: 13px; padding: 40px 0; text-align: center; }
 
 /* Skeleton loading states */
@@ -76,7 +76,7 @@
   background: var(--bg-card); border: 1px solid var(--border);
 }
 
-@media (max-width: 1200px) { .chartRow { grid-template-columns: 1fr; } .bottomRow { grid-template-columns: 1fr; } .skHalf2 { grid-template-columns: 1fr; } }
+@media (max-width: 1200px) { .chartRow { grid-template-columns: 1fr; } .skHalf2 { grid-template-columns: 1fr; } }
 @media (max-width: 860px)  {
   .body { flex-direction: column; height: auto; overflow: visible; }
   .main { overflow-y: visible; }

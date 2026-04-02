@@ -1,8 +1,0 @@
-.card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; }
-.title { font-size: 12px; font-weight: 600; color: var(--ts); margin-bottom: 10px; display: flex; align-items: center; gap: 7px; }
-.pill  { font-size: 10px; padding: 1px 7px; border-radius: 10px; background: var(--bg-elevated); border: 1px solid var(--border); color: var(--tm); font-weight: 500; }
-.svg   { display: block; width: 100%; overflow: visible; }
-.stats { display: flex; gap: 20px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-light); flex-wrap: wrap; }
-.stat  { display: flex; flex-direction: column; gap: 2px; }
-.statVal { font-size: 15px; font-weight: 700; color: var(--green); }
-.statLbl { font-size: 9px; color: var(--tm); letter-spacing: .08em; text-transform: uppercase; }
