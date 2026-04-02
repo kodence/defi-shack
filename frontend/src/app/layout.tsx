@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import "bulma/css/bulma.min.css";
 import "./globals.css";
+import Navbar from "@/components/Navbar";
 
 export const metadata: Metadata = {
-  title: "LPSim — LP Discovery",
-  description: "Discover DeFi liquidity pool opportunities",
+  title: "LPSim",
+  description: "DeFi liquidity pool discovery and simulation",
 };
 
 export default function RootLayout({
@@ -15,9 +16,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <section className="section">
-          <div className="container is-fluid">{children}</div>
-        </section>
+        <Navbar />
+        {children}
       </body>
     </html>
   );

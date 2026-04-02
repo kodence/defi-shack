@@ -95,3 +95,62 @@ th.sortable:hover {
   align-items: center;
   padding: 3rem;
 }
+
+/* ── Simulator dark theme — scoped to .simulator-shell ────────────────────── */
+.simulator-shell {
+  --bg-base: #0d1117;
+  --bg-surface: #161b22;
+  --bg-card: #1c2128;
+  --bg-elevated: #22272e;
+  --bg-input: #0d1117;
+  --border: #30363d;
+  --border-light: #21262d;
+  --tx: #e6edf3;
+  --ts: #8b949e;
+  --tm: #484f58;
+  --green: #3fb950;
+  --red: #f85149;
+  --blue: #388bfd;
+  --amber: #e3b341;
+  --purple: #bc8cff;
+  --green-bg: rgba(63, 185, 80, 0.10);
+  --red-bg: rgba(248, 81, 73, 0.10);
+  --blue-bg: rgba(56, 139, 253, 0.10);
+  --amber-bg: rgba(227, 179, 65, 0.10);
+  --purple-bg: rgba(188, 140, 255, 0.10);
+  color: var(--tx);
+  background: var(--bg-base);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.simulator-shell *,
+.simulator-shell *::before,
+.simulator-shell *::after {
+  box-sizing: border-box;
+}
+
+.simulator-shell input,
+.simulator-shell select,
+.simulator-shell button {
+  font-family: inherit;
+  color: var(--tx);
+}
+
+.simulator-shell input,
+.simulator-shell select {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+}
+
+.simulator-shell button {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  cursor: pointer;
+}
+
+.simulator-shell ::-webkit-scrollbar { width: 4px; height: 4px; }
+.simulator-shell ::-webkit-scrollbar-track { background: transparent; }
+.simulator-shell ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }

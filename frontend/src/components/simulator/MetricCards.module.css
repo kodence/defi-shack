@@ -1,0 +1,38 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  border-radius: 10px 10px 0 0;
+}
+.green::before  { background: var(--green); }
+.blue::before   { background: var(--blue); }
+.red::before    { background: var(--red); }
+.purple::before { background: var(--purple); }
+
+.label { font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--tm); }
+.value { font-size: 24px; font-weight: 700; letter-spacing: -.5px; line-height: 1.1; }
+.green .value  { color: var(--green); }
+.blue .value   { color: var(--blue); }
+.red .value    { color: var(--red); }
+.purple .value { color: var(--purple); }
+.sub { font-size: 10px; color: var(--tm); }
+
+@media (max-width: 1100px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px)  { .grid { grid-template-columns: 1fr; } }

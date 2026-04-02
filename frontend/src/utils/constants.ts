@@ -41,17 +41,17 @@ export const NETWORKS = [
 ] as const;
 
 export const EXCHANGES = [
-  { key: "uniswap-v3", label: "Uniswap V3" },
+  { key: "uniswap-v3", label: "Uniswap-V3" },
 ] as const;
 
 // Icon mapping — drop SVG/PNG files into frontend/public/icons/
 // File names must match the values below (e.g. ethereum.svg, uniswap-v3.svg)
 export const NETWORK_ICONS: Record<string, string> = {
-  ethereum: "/icons/ethereum.png",
-  arbitrum: "/icons/arbitrum.png",
-  base: "/icons/base.png",
+  Ethereum: "/icons/ethereum.png",
+  Arbitrum: "/icons/arbitrum.png",
+  Base: "/icons/base.png",
 };
 
 export const EXCHANGE_ICONS: Record<string, string> = {
-  "uniswap-v3": "/icons/uniswap-v3.png",
+  "Uniswap-V3": "/icons/uniswap-v3.png",
 };

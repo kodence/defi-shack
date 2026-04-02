@@ -1,0 +1,10 @@
+.card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; }
+.title { font-size: 12px; font-weight: 600; color: var(--ts); margin-bottom: 10px; display: flex; align-items: center; gap: 7px; }
+.pill  { font-size: 10px; padding: 1px 7px; border-radius: 10px; background: var(--bg-elevated); border: 1px solid var(--border); color: var(--tm); font-weight: 500; }
+.svg   { display: block; width: 100%; overflow: visible; cursor: crosshair; user-select: none; }
+.legend { display: flex; gap: 16px; margin-top: 8px; flex-wrap: wrap; }
+.li  { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--ts); }
+.ll  { width: 18px; height: 2px; border-radius: 1px; flex-shrink: 0; display: inline-block; }
+.ld  { width: 18px; height: 0; border-top: 2px dashed; flex-shrink: 0; display: inline-block; }
+.rangeFill { width: 14px; height: 10px; background: rgba(56,139,253,.15); border-radius: 2px; flex-shrink: 0; display: inline-block; }
+.dragHint { font-size: 10px; color: var(--tm); margin-left: auto; }
