@@ -19,6 +19,7 @@ export interface SimulationConfig {
   lowerPrice:     number;
   upperPrice:     number;
   investmentUsd:  number;
+  days?:          number;
 }
 
 export interface PositionMetrics {

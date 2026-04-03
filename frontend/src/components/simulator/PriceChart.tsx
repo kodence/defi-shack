@@ -21,19 +21,21 @@ interface TooltipInfo {
 }
 
 /* Overlay label: dark pill with text, positioned inside the chart */
-function OverlayLabel({ x, y, label, fontSize = 8 }: {
-  x: string; y: string; label: string; fontSize?: number;
+function OverlayLabel({ x, y, label, fontSize = 8, anchor = "start" }: {
+  x: string; y: string; label: string; fontSize?: number; anchor?: "start" | "end";
 }) {
   const padX = 4, padY = 2, charW = fontSize * 0.58;
   const tw = label.length * charW + padX * 2;
   const th = fontSize + padY * 2;
+  const rectX = anchor === "end" ? +x - tw : +x;
+  const textX = anchor === "end" ? String(+x - padX) : String(+x + padX);
   return (
     <g>
-      <rect x={+x} y={+y - th / 2} width={tw} height={th} rx="2"
+      <rect x={rectX} y={+y - th / 2} width={tw} height={th} rx="2"
         fill="rgba(13,17,23,.75)" />
-      <text x={String(+x + padX)} y={y}
-        fontSize={fontSize} fill="#8b949e"
-        textAnchor="start"
+      <text x={textX} y={y}
+        fontSize={fontSize} fill="#c9d1d9"
+        textAnchor={anchor}
         dominantBaseline="central">{label}</text>
     </g>
   );
@@ -64,13 +66,13 @@ export default function PriceChart({ candles, cfg, tvlHistory, aprHistory, onCha
   if (!candles.length) return null;
 
   // ── Dimensions — W tracks actual container width ────────────────────────
-  const W = containerW, H_PRICE = 300, H_VOL = 50, H_TVL = 50, H_APR = 50, H_GAP = 4;
-  const H = H_PRICE + H_GAP + H_VOL + H_GAP + H_TVL + H_GAP + H_APR + 22;
+  const W = containerW, H_PRICE = 300, H_VOL = 75, H_TVL = 75, H_APR = 75, H_GAP = 4, H_SEC_GAP = 10;
+  const H = H_PRICE + H_GAP + H_VOL + H_SEC_GAP + H_TVL + H_SEC_GAP + H_APR + 22;
   const PL = 12, PR = 4, PT = 12;
   const priceTop = PT, priceBot = PT + H_PRICE;
   const volTop = priceBot + H_GAP, volBot = volTop + H_VOL;
-  const tvlTop = volBot + H_GAP, tvlBot = tvlTop + H_TVL;
-  const aprTop = tvlBot + H_GAP, aprBot = aprTop + H_APR;
+  const tvlTop = volBot + H_SEC_GAP, tvlBot = tvlTop + H_TVL;
+  const aprTop = tvlBot + H_SEC_GAP, aprBot = aprTop + H_APR;
   const cW = W - PL - PR;
 
   // ── Data ranges ─────────────────────────────────────────────────────────
@@ -155,7 +157,10 @@ export default function PriceChart({ candles, cfg, tvlHistory, aprHistory, onCha
 
     if (section === "price" || section === "vol") {
       const up = c.close >= c.open;
-      lines.push(`Day ${N - col} · ${up ? "Up" : "Down"}`);
+      const daysAgo = N - 1 - col;
+      const date = new Date(Date.now() - daysAgo * 86_400_000);
+      const dateStr = date.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+      lines.push(`${dateStr} · ${up ? "Up" : "Down"}`);
       lines.push(`O: ${fmtPrice(c.open)}  H: ${fmtPrice(c.high)}`);
       lines.push(`L: ${fmtPrice(c.low)}  C: ${fmtPrice(c.close)}`);
       lines.push(`Vol: ${fmtUsd(c.volume)}`);
@@ -271,7 +276,18 @@ export default function PriceChart({ candles, cfg, tvlHistory, aprHistory, onCha
     <div className={styles.card} ref={wrapRef} style={{ position: "relative" }}>
       <div className={styles.title}>
         Price chart
-        <span className={styles.pill}>90-day synthetic · OHLCV</span>
+        <span className={styles.pill}>{cfg.days ?? 90}-day synthetic · OHLCV</span>
+        <span className={styles.daySelector}>
+          {[7, 30, 90, 365].map(d => (
+            <button
+              key={d}
+              className={`${styles.dayBtn} ${(cfg.days ?? 90) === d ? styles.dayBtnActive : ""}`}
+              onClick={() => onChange({ days: d })}
+            >
+              {d}d
+            </button>
+          ))}
+        </span>
       </div>
 
       <svg
@@ -326,6 +342,11 @@ export default function PriceChart({ candles, cfg, tvlHistory, aprHistory, onCha
           <OverlayLabel key={y} x={f(PL + 2)} y={y} label={label} />
         ))}
 
+        {/* Price grid labels (right edge) */}
+        {gridLines.map(({ y, label }) => (
+          <OverlayLabel key={`r${y}`} x={f(W - PR - 2)} y={y} label={label} anchor="end" />
+        ))}
+
         {/* ── Volume section ─────────────────────────────────────────── */}
         <line x1={PL} y1={volTop - 2} x2={W - PR} y2={volTop - 2} stroke="#21262d" strokeWidth=".5" />
 
@@ -347,7 +368,7 @@ export default function PriceChart({ candles, cfg, tvlHistory, aprHistory, onCha
         <OverlayLabel x={f(PL + 2)} y={f(volTop + 9)} label="Vol" />
 
         {/* ── TVL section ────────────────────────────────────────────── */}
-        <line x1={PL} y1={tvlTop - 2} x2={W - PR} y2={tvlTop - 2} stroke="#21262d" strokeWidth=".5" />
+        <line x1={PL} y1={f(volBot + H_SEC_GAP / 2)} x2={W - PR} y2={f(volBot + H_SEC_GAP / 2)} stroke="#484f58" strokeWidth="1" />
 
         {tvlSamples.map((d, i) => {
           const ci = subOffset + i;
@@ -364,7 +385,7 @@ export default function PriceChart({ candles, cfg, tvlHistory, aprHistory, onCha
         <OverlayLabel x={f(PL + 2)} y={f(tvlTop + 9)} label={`TVL  ${fmtAxisVal(maxTvl)}`} />
 
         {/* ── APR section ────────────────────────────────────────────── */}
-        <line x1={PL} y1={aprTop - 2} x2={W - PR} y2={aprTop - 2} stroke="#21262d" strokeWidth=".5" />
+        <line x1={PL} y1={f(tvlBot + H_SEC_GAP / 2)} x2={W - PR} y2={f(tvlBot + H_SEC_GAP / 2)} stroke="#484f58" strokeWidth="1" />
 
         {aprSamples.map((s, i) => {
           const ci = subOffset + i;
@@ -428,7 +449,7 @@ export default function PriceChart({ candles, cfg, tvlHistory, aprHistory, onCha
 
         {/* X-axis labels */}
         {xLabels.map(({ x, label }) => (
-          <text key={x + label} x={x} y={f(aprBot + 14)} fontSize="9" fill="#484f58" textAnchor="middle">{label}</text>
+          <text key={x + label} x={x} y={f(aprBot + 14)} fontSize="9" fill="#8b949e" textAnchor="middle">{label}</text>
         ))}
       </svg>
 

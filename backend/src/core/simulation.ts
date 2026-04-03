@@ -85,15 +85,16 @@ export function buildTvlHistory(cfg: SimulationConfig): TvlDayData[] {
   let seed = 54321;
   const lcg = () => { seed = (seed * 1664525 + 1013904223) & 0x7fffffff; return seed / 0x7fffffff; };
 
+  const DAYS = cfg.days ?? 90;
   const samples: TvlDayData[] = [];
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < DAYS; i++) {
     const tvlScale = 0.8 + lcg() * 0.4;
     const volScale = 0.7 + lcg() * 0.6;
     const tvlUsd   = preset.tvlUsd * tvlScale;
     const volUsd   = cfg.volume24hUsd * volScale;
     const feesUsd  = volUsd * feeRate;
     samples.push({
-      dayIndex: i, timestampUnix: now - (29 - i) * DAY,
+      dayIndex: i, timestampUnix: now - (DAYS - 1 - i) * DAY,
       tvlUsd, feesUsd, volumeUsd: volUsd,
     });
   }
@@ -107,14 +108,16 @@ export function buildAprHistory(cfg: SimulationConfig, m: PositionMetrics): AprH
   const now      = Math.floor(Date.now() / 1000);
   const DAY      = 86_400;
 
-  // Generate 30 synthetic daily samples with ±3% price drift
+  const DAYS = cfg.days ?? 90;
+
+  // Generate synthetic daily samples with ±3% price drift
   let seed = 12345;
   const lcg = () => { seed = (seed * 1664525 + 1013904223) & 0x7fffffff; return seed / 0x7fffffff; };
 
   const samples: DailyAprSample[] = [];
   let price = cfg.currentPrice;
 
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < DAYS; i++) {
     price = price * (1 + (lcg() - 0.5) * 0.06);
     const inRange = price >= cfg.lowerPrice && price <= cfg.upperPrice;
     const volScale = 0.7 + lcg() * 0.6;
@@ -131,7 +134,7 @@ export function buildAprHistory(cfg: SimulationConfig, m: PositionMetrics): AprH
     }
     samples.push({
       dayIndex: i,
-      timestampUnix: now - (29 - i) * DAY,
+      timestampUnix: now - (DAYS - 1 - i) * DAY,
       feesUsd, positionValueUsd: posVal, dailyApr, inRange,
     });
   }
@@ -147,7 +150,7 @@ export function buildAprHistory(cfg: SimulationConfig, m: PositionMetrics): AprH
 // ── Price history (synthetic OHLCV) ───────────────────────────────────────────
 export function buildPriceHistory(cfg: SimulationConfig): PriceCandle[] {
   const preset = PRESET_MAP.get(cfg.presetId)!;
-  const DAYS   = 90;
+  const DAYS   = cfg.days ?? 90;
   const dailyVol = preset.annualVolatility / Math.sqrt(365);
 
   // Seeded LCG for reproducibility per preset

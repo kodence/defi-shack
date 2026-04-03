@@ -21,6 +21,7 @@ export interface SimulationConfig {
   lowerPrice:     number;
   upperPrice:     number;
   investmentUsd:  number;
+  days?:          number;
 }
 
 // ── Computed metrics ──────────────────────────────────────────────────────────

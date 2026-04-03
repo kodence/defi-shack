@@ -44,6 +44,7 @@ router.post("/simulate", (req: Request, res: Response) => {
     lowerPrice:     body.lowerPrice,
     upperPrice:     body.upperPrice,
     investmentUsd:  body.investmentUsd,
+    days:           [7, 30, 90, 365].includes(Number(body.days)) ? Number(body.days) : 90,
   };
 
   try {

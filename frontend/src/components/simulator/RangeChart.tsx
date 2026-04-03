@@ -72,7 +72,7 @@ export default function RangeChart({ data, cfg }: Props) {
         {gridLines.map(({ ty, label }) => (
           <g key={ty}>
             <line x1={PL} y1={ty} x2={W - PR} y2={ty} stroke="#21262d" strokeWidth=".5" />
-            <text x={PL - 4} y={ty} fontSize="10" fill="#484f58" textAnchor="end" dominantBaseline="central">{label}</text>
+            <text x={PL - 4} y={ty} fontSize="10" fill="#8b949e" textAnchor="end" dominantBaseline="central">{label}</text>
           </g>
         ))}
 
@@ -97,7 +97,7 @@ export default function RangeChart({ data, cfg }: Props) {
 
         {/* X labels */}
         {xLabels.map(({ px, label }) => (
-          <text key={px} x={px} y={f(PT + cH + 16)} fontSize="10" fill="#484f58" textAnchor="middle">{label}</text>
+          <text key={px} x={px} y={f(PT + cH + 16)} fontSize="10" fill="#8b949e" textAnchor="middle">{label}</text>
         ))}
       </svg>
 
