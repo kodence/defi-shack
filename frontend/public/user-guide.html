@@ -532,7 +532,8 @@
         <li><a href="#valid"><span class="n">06</span><span>Validate the position</span></a></li>
         <li><a href="#portfolio"><span class="n">07</span><span>Size the portfolio</span></a></li>
         <li><a href="#track"><span class="n">08</span><span>Track and rebalance</span></a></li>
-        <li><a href="#custom"><span class="n">09</span><span>Positions elsewhere</span></a></li>
+        <li><a href="#history"><span class="n">09</span><span>In-range history</span></a></li>
+        <li><a href="#custom"><span class="n">10</span><span>Positions elsewhere</span></a></li>
       </ol>
       <p class="tl">Reference</p>
       <ol>
@@ -1009,28 +1010,11 @@
           </div>
         </div>
 
-        <h3>In-range time</h3>
         <p>
-          Out of range means earning nothing, so LPSim records history and reports the share of
-          observed time you were actually in range, with a timeline underneath
-          (<span class="pill g">in range</span> / <span class="pill b">out</span> /
-          <span class="pill n">unobserved</span>).
+          Those four numbers describe the position <em>right now</em>. Underneath each card,
+          LPSim also shows how they have moved over time &mdash; see
+          <a href="#history">in-range history</a>.
         </p>
-        <p>
-          Press <span class="ui">&#9734; Watch</span> to have the backend snapshot the wallet
-          every <code>15</code> minutes so history accrues while the page is closed. It is
-          opt-in because each poll spends metered Graph queries. Unwatching keeps everything
-          already recorded.
-        </p>
-        <div class="note">
-          <b>Coverage is reported honestly</b>
-          <p>
-            History only accrues while the backend is running, so expect the first useful
-            percentage after a few intervals. Gaps longer than <code>90</code> minutes count as
-            <em>unobserved</em> rather than being credited to your last known state &mdash;
-            downtime lowers the coverage figure instead of quietly inflating in-range time.
-          </p>
-        </div>
 
         <h3>When to rebalance</h3>
         <p>
@@ -1069,8 +1053,146 @@
       </section>
 
       <!-- 09 -->
+      <section id="history">
+        <div class="sec-head"><span class="step-n">09</span><h2>In-range history</h2></div>
+        <p class="framework">Track &middot; what the position did while you weren't watching</p>
+        <p>
+          A position outside its range earns nothing. The <span class="pill g">In range</span>
+          badge tells you about this instant; <strong>in-range history tells you what share of
+          the time the position has actually been working</strong> &mdash; which is the number
+          that decides whether the range you picked in step <a href="#range">03</a> was right.
+        </p>
+
+        <h3>How history accrues</h3>
+        <p>
+          LPSim records a snapshot of every position: its range status, price, value, unclaimed
+          fees and divergence loss. There are two sources, and you only control the second.
+        </p>
+        <div class="spec">
+          <div class="k">Loading the page</div>
+          <div class="v">
+            Every wallet lookup writes a snapshot, debounced to once a minute so refreshing
+            doesn't flood the record. Free, but it only captures the moments you happened to
+            be looking.
+          </div>
+          <div class="k"><span class="ui">&#9734; Watch</span></div>
+          <div class="v">
+            The backend then snapshots that wallet every <code>15</code> minutes on its own, so
+            history keeps building while the page is closed. <strong>This is the one that
+            produces a meaningful percentage.</strong> It is opt-in because each poll spends
+            metered Graph queries &mdash; watch the wallet you actually manage, not every
+            address you look up.
+          </div>
+          <div class="k"><span class="ui">&#9733; Watching</span></div>
+          <div class="v">
+            Click again to stop polling. <strong>Everything already recorded is kept</strong>
+            &mdash; unwatching pauses collection, it does not erase history.
+          </div>
+        </div>
+
+        <h3>Reading the panel</h3>
+        <div class="spec">
+          <div class="k">In-range %</div>
+          <div class="v">
+            Share of <em>observed</em> time spent in range, weighted by duration rather than by
+            snapshot count. Colour-coded
+            <span class="pill g">&ge; 90%</span>
+            <span class="pill w">60&ndash;90%</span>
+            <span class="pill b">&lt; 60%</span>.
+          </div>
+          <div class="k">Timeline</div>
+          <div class="v">
+            The same history drawn proportionally to time:
+            <span class="pill g">in range</span>, <span class="pill b">out of range</span>, and
+            <span class="pill n">unobserved</span>. Long red stretches show you <em>when</em> the
+            position stopped earning, not just how often.
+          </div>
+          <div class="k">Coverage</div>
+          <div class="v">
+            How much of the elapsed window was actually observed. <strong>Read this before you
+            trust the percentage above it.</strong>
+          </div>
+        </div>
+
+        <div class="note warn">
+          <b>A high percentage at low coverage means "not enough data yet"</b>
+          <p>
+            Gaps longer than <code>90</code> minutes &mdash; the backend was down, or the wallet
+            wasn't watched &mdash; are recorded as <em>unobserved</em> rather than credited to
+            your last known state. That is deliberate: downtime lowers coverage instead of
+            quietly inflating in-range time. So <code>100%</code> in range at <code>3%</code>
+            coverage is not a healthy position, it is an unmeasured one. Wait for coverage to
+            build before acting on it.
+          </p>
+        </div>
+
+        <h3>Earnings retention trend</h3>
+        <p>
+          The same snapshots drive the retention sparkline &mdash; net vs HODL divided by
+          earnings, tracked over time, with its direction marked
+          <span class="pill g">&#9650;</span> <span class="pill n">flat</span>
+          <span class="pill b">&#9660;</span> and its starting value for comparison.
+        </p>
+        <p>
+          Retention is the share of your fee income you actually keep after divergence loss, so
+          <code>APR &times; retention</code> is the return you are really earning. The direction
+          matters more than the level: <strong>rising retention means fees are pulling ahead of
+          divergence</strong>, and falling retention means the opposite, even while the position
+          sits comfortably in range.
+        </p>
+
+        <h3>Acting on it</h3>
+        <div class="tw">
+          <table>
+            <thead>
+              <tr><th>What you see</th><th>What it means</th><th>Do this</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="pill g">High in-range</span> and rising retention</td>
+                <td>The range fits the pair's real volatility and fees are outrunning divergence.</td>
+                <td>Leave it alone. Reuse this width next time.</td>
+              </tr>
+              <tr>
+                <td><span class="pill b">Low in-range</span>, position still open</td>
+                <td>The range is too tight or off-centre for how this pair actually moves.</td>
+                <td>Return to step <a href="#range">03</a>, widen or recentre, and check the range guard before redeploying.</td>
+              </tr>
+              <tr>
+                <td>In range, but retention falling</td>
+                <td>The two assets are diverging faster than fees accumulate.</td>
+                <td>Recheck correlation (step <a href="#discover">01</a>) and recovery time (step <a href="#dl">05</a>). A crypto&ndash;stable pool is expected to look like this.</td>
+              </tr>
+              <tr>
+                <td>Flat <code>0%</code> in range</td>
+                <td>Price left and has not come back; you are earning nothing.</td>
+                <td>Apply the SMART timing rules in step <a href="#track">08</a> &mdash; wait 48&ndash;72h first unless it is clearly deteriorating.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          Over several positions this becomes the most honest feedback loop LPSim offers: your
+          projected APR was a model, but in-range time is what actually happened. If your ranges
+          consistently spend a third of their life out of range, the fix is in how you set them
+          &mdash; not in the pool you picked.
+        </p>
+
+        <div class="note">
+          <b>Tuning and retention of the data</b>
+          <p>
+            <code>LPSIM_POLL_INTERVAL_MS</code> changes the snapshot cadence &mdash; shorter gives
+            denser history at the cost of more queries. Snapshots older than <code>180</code>
+            days are pruned automatically. Everything lives in a local SQLite file
+            (<code>backend/data/lpsim.db</code>), so history is per-machine and is not shared
+            between installs.
+          </p>
+        </div>
+      </section>
+
+      <!-- 10 -->
       <section id="custom">
-        <div class="sec-head"><span class="step-n">09</span><h2>Positions elsewhere</h2></div>
+        <div class="sec-head"><span class="step-n">10</span><h2>Positions elsewhere</h2></div>
         <p class="framework">Track &middot; custom positions</p>
         <p>
           For pools LPSim cannot see &mdash; another DEX, another chain &mdash; track them by
@@ -1127,6 +1249,9 @@
               <tr><td>Recovery, 1&ndash;5 day moves</td><td class="mono">within 10 days</td><td>VALID guidance</td></tr>
               <tr><td>Recovery, 5&ndash;10 day moves</td><td class="mono">within 14&ndash;20 days</td><td>VALID guidance</td></tr>
               <tr><td>Position size</td><td class="mono">&le; 5% of TVL <span class="pill n">10% if deep elsewhere</span></td><td>VALID</td></tr>
+              <tr><td>In-range time</td><td class="mono">&ge; 90% healthy &middot; &lt; 60% recentre</td><td>In-range history</td></tr>
+              <tr><td>Snapshot cadence</td><td class="mono">15 min when watched</td><td>In-range history</td></tr>
+              <tr><td>Unobserved gap</td><td class="mono">&gt; 90 min</td><td>In-range history</td></tr>
               <tr><td>Rebalance patience</td><td class="mono">wait 48&ndash;72h</td><td>Track / SMART</td></tr>
               <tr><td>Zero-DL rebalance window</td><td class="mono">entry price &plusmn;2%</td><td>Track / SMART</td></tr>
             </tbody>
@@ -1159,6 +1284,9 @@
             disturbing the rest.</li>
           <li><strong>Watch selectively.</strong> Every watched wallet costs metered queries on
             each poll. Watch the wallet you actually manage.</li>
+          <li><strong>Read coverage before the in-range number.</strong> A percentage built on
+            <code>3%</code> coverage is noise; the same number at <code>90%</code> coverage is a
+            verdict on your range.</li>
           <li><strong>Compare fee tiers of the same pair.</strong> Discovery lists them
             separately &mdash; the <code>0.05%</code> and <code>0.3%</code> pools for one pair
             often have very different Fee/TVL.</li>
