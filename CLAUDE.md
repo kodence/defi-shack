@@ -63,7 +63,7 @@ All simulator prices are **oriented**: `quote per base` where `baseToken: 0|1` s
 - **`components/ControlsBar.tsx`** — Dropdowns for opportunity type, exchange (multi-select), network (multi-select), timeframe, and hide-filtered toggle
 - **`utils/constants.ts`** — Column definitions, network/exchange lists, pagination config (20 rows/page, 5 pages max, 100 max display)
 - **`app/portfolio`** — Portfolio builder: positions saved from the simulator to localStorage (`lpsim.portfolio.v1` via `lib/portfolio.ts`), risk scoring/backbone pick, allocation edits (lite re-simulate), market-wide stress test (stablecoins pinned at $1)
-- **`app/track`** — Wallet position tracking against `/api/track`; remembers the last address in localStorage
+- **`app/track`** — Wallet position tracking against `/api/track`; remembers the last address in localStorage. Also hosts **custom positions** (`components/track/`, `lib/custom.ts`, localStorage key `lpsim.custom.v1`): manually tracked pools on unsupported DEXes/chains with the deposit → check → claim → withdraw lifecycle; current token prices resolve by CoinGecko id through `GET /api/prices?ids=csv` (60s-cached proxy in `backend/src/routes/prices.ts`), with per-token manual USD overrides as fallback
 - **Path alias:** `@/*` maps to `./src/*`
 
 ### Type contract

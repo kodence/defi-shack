@@ -6,6 +6,7 @@ import { TrackedPosition } from "@/types/track";
 import { api } from "@/lib/api";
 import { formatUSD } from "@/utils/format";
 import { NETWORKS } from "@/utils/constants";
+import CustomPositions from "@/components/track/CustomPositions";
 
 const ADDR_KEY = "lpsim.track.address";
 const ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
@@ -252,6 +253,8 @@ export default function TrackPage() {
             </div>
           </>
         )}
+
+        <CustomPositions />
       </div>
     </section>
   );

@@ -28,6 +28,8 @@ export const api = {
   simulateLite:    (cfg: SimulationConfig)     => req<SimulationResult>   ("POST", "/simulate", { ...cfg, lite: true }),
   track:           (address: string, networks?: string[]) =>
     req<TrackApiResponse>("GET", `/api:/track/${address}${networks?.length ? `?networks=${networks.join(",")}` : ""}`),
+  prices:          (ids: string[]) =>
+    req<{ prices: Record<string, number>; fetchedAt: string }>("GET", `/api:/prices?ids=${ids.join(",")}`),
 };
 
 // ── Formatting ──────────────────────────────────────────────────────────────
