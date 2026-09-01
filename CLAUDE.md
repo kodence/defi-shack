@@ -45,7 +45,8 @@ The Graph (Uniswap V3 subgraph per network)
 - **`services/metrics.ts`** — Pure computation: avg daily fees/volume/TVL, APR, Pearson correlation, price volatility (max deviation from mean, stablecoin-aware token selection).
 - **`services/cache.ts`** — Simple Map-based TTL cache keyed by `timeframe:networks`.
 - **`services/poolSnapshot.ts`** — Live-pool fetch for the simulator: pool meta + windowed ticks (±9200 ticks ≈ price ×/÷2.5, cursor-paginated, max 3 pages) + 365d pool/token history, in 2 GraphQL round trips. TTL cache with in-flight coalescing per `(network, poolId)`.
-- **`routes/simulator.ts`** — `GET /presets`, `GET /presets/:id/default`, `GET /pool/:network/:poolId/default?base=0|1`, `POST /simulate` (accepts `presetId` or `network`+`poolId`).
+- **`routes/simulator.ts`** — `GET /presets`, `GET /presets/:id/default`, `GET /pool/:network/:poolId/default?base=0|1`, `POST /simulate` (accepts `presetId` or `network`+`poolId`; `lite: true` strips chart arrays for the portfolio fan-out).
+- **`routes/track.ts` + `services/tracker.ts`** — `GET /api/track/:address?networks=csv`: active Uniswap V3 positions per wallet. Uncollected fees are computed exactly from on-chain feeGrowth values (BigInt, uint256 wrap-around); vs-HODL benchmarks (initial / 50-50 / all-A / all-B) use entry-day token prices from `tokenDayDatas`. **The deployed subgraphs' `collectedFeesToken1` mirrors token0 (data bug), so lifetime collected fees are excluded — earnings are unclaimed-only.** 60s TTL cache.
 - **`core/`** — Simulator engine. `math.ts` (Uniswap V3 liquidity/IL math; `aprFromVolume` includes the position's own L in the denominator = deposit dilution), `liquidity.ts` (active-liquidity curve anchored on pool.liquidity at the current tick, walked outward via `liquidityNet`), `context.ts` (builds a `SimContext` from a preset [synthetic history] or a live snapshot [oriented real history]; base/quote orientation, volume stats with spike trim, historical joint 7d moves), `simulation.ts` (metrics, calc methods current/peak/average/custom, realistic vs worst-case APR, scenarios with recovery days, divergence-loss scenarios, depth-chart buckets).
 
 ### Simulator orientation model
@@ -61,6 +62,8 @@ All simulator prices are **oriented**: `quote per base` where `baseToken: 0|1` s
 - **`hooks/useSorting.ts`** — Column sort state, default TVL descending. String columns use `localeCompare`, numeric use subtraction.
 - **`components/ControlsBar.tsx`** — Dropdowns for opportunity type, exchange (multi-select), network (multi-select), timeframe, and hide-filtered toggle
 - **`utils/constants.ts`** — Column definitions, network/exchange lists, pagination config (20 rows/page, 5 pages max, 100 max display)
+- **`app/portfolio`** — Portfolio builder: positions saved from the simulator to localStorage (`lpsim.portfolio.v1` via `lib/portfolio.ts`), risk scoring/backbone pick, allocation edits (lite re-simulate), market-wide stress test (stablecoins pinned at $1)
+- **`app/track`** — Wallet position tracking against `/api/track`; remembers the last address in localStorage
 - **Path alias:** `@/*` maps to `./src/*`
 
 ### Type contract

@@ -26,6 +26,18 @@ export default function Navbar() {
           >
             Simulator
           </Link>
+          <Link
+            className={`navbar-item${pathname === "/portfolio" ? " is-active has-text-weight-semibold" : ""}`}
+            href="/portfolio"
+          >
+            Portfolio
+          </Link>
+          <Link
+            className={`navbar-item${pathname === "/track" ? " is-active has-text-weight-semibold" : ""}`}
+            href="/track"
+          >
+            Track
+          </Link>
         </div>
       </div>
     </nav>

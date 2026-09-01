@@ -1,9 +1,12 @@
 import type { PoolPreset, SimulationConfig, SimulationResult, LivePoolDefault } from "@/types/simulator";
+import type { TrackApiResponse } from "@/types/track";
 
-const BASE = "http://localhost:3001/api/simulator";
+const API_ROOT = "http://localhost:3001/api";
+const BASE = `${API_ROOT}/simulator`;
 
 async function req<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const r = await fetch(`${BASE}${path}`, {
+  const url = path.startsWith("/api:") ? `${API_ROOT}${path.slice(5)}` : `${BASE}${path}`;
+  const r = await fetch(url, {
     method,
     headers: { "Content-Type": "application/json" },
     ...(body ? { body: JSON.stringify(body) } : {}),
@@ -21,6 +24,10 @@ export const api = {
   getLiveDefault:  (network: string, poolId: string, base?: 0 | 1) =>
     req<LivePoolDefault>("GET", `/pool/${network}/${poolId}/default${base !== undefined ? `?base=${base}` : ""}`),
   simulate:        (cfg: SimulationConfig)     => req<SimulationResult>   ("POST", "/simulate", cfg),
+  // lite: charts stripped server-side — used by the portfolio page fan-out
+  simulateLite:    (cfg: SimulationConfig)     => req<SimulationResult>   ("POST", "/simulate", { ...cfg, lite: true }),
+  track:           (address: string, networks?: string[]) =>
+    req<TrackApiResponse>("GET", `/api:/track/${address}${networks?.length ? `?networks=${networks.join(",")}` : ""}`),
 };
 
 // ── Formatting ──────────────────────────────────────────────────────────────

@@ -12,6 +12,7 @@ import LiquidityChart  from "@/components/simulator/LiquidityChart";
 import DivergencePanel from "@/components/simulator/DivergencePanel";
 import ValidChecklist  from "@/components/simulator/ValidChecklist";
 import Toast, { useToast } from "@/components/simulator/Toast";
+import { loadPortfolio, savePortfolio, positionFromResult } from "@/lib/portfolio";
 import styles from "./page.module.css";
 
 function SimulatorInner() {
@@ -130,6 +131,15 @@ function SimulatorInner() {
     });
   }, [scheduleSimulate]);
 
+  // ── Save to portfolio ─────────────────────────────────────────────────────
+  const handleAddToPortfolio = useCallback(() => {
+    if (!cfg || !result) return;
+    const positions = loadPortfolio();
+    const saved = positionFromResult(cfg, result);
+    savePortfolio([...positions, saved]);
+    pushToast(`Added ${saved.poolName} to portfolio (${positions.length + 1} total)`, false);
+  }, [cfg, result, pushToast]);
+
   const m = result?.metrics;
 
   return (
@@ -152,6 +162,12 @@ function SimulatorInner() {
             </span>
             <span className={styles.feeTag}>{pool.feeLabel}</span>
           </div>
+        )}
+        {result && (
+          <button className={styles.addBtn} onClick={handleAddToPortfolio}
+            title="Save this position to the portfolio builder">
+            ＋ Add to portfolio
+          </button>
         )}
         {loading && <span className={styles.spinner} />}
       </header>

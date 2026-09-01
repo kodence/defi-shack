@@ -137,15 +137,29 @@ router.post("/simulate", async (req: Request, res: Response) => {
     dlScenarios,
   };
 
+  // lite: strip the heavy chart arrays — used by the portfolio page, which only
+  // needs metrics/divergence and may fan out one call per saved position
+  const lite = (req.body as { lite?: boolean }).lite === true;
+  const finish = (result: ReturnType<typeof runSimulation>) => {
+    if (lite) {
+      result.rangeChart = [];
+      result.tvlHistory = [];
+      result.priceHistory = [];
+      result.aprHistory = { ...result.aprHistory, dailySamplesB: [] };
+      result.liquidity = null;
+    }
+    return res.json(result);
+  };
+
   try {
     if (isLive) {
       const snap = await getPoolSnapshot(cfg.network!, cfg.poolId!);
       const ctx = buildLiveContext(cfg, snap);
       cfg.volume24hUsd = ctx.volume.avgUsd;
-      return res.json(runSimulation(cfg, ctx));
+      return finish(runSimulation(cfg, ctx));
     }
     const preset = PRESET_MAP.get(cfg.presetId!)!;
-    return res.json(runSimulation(cfg, buildPresetContext(cfg, preset)));
+    return finish(runSimulation(cfg, buildPresetContext(cfg, preset)));
   } catch (e) {
     console.error(e);
     const msg = e instanceof Error ? e.message : "Simulation failed";

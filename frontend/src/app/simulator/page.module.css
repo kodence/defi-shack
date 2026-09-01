@@ -17,6 +17,13 @@
 .tIcon + .tIcon { margin-left: -7px; }
 .feeTag    { padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; background: var(--amber-bg); color: var(--amber); border: 1px solid rgba(227,179,65,.3); }
 
+.addBtn {
+  padding: 5px 12px; border-radius: 6px; border: 1px solid var(--green);
+  background: var(--green-bg, rgba(63,185,80,.12)); color: var(--green);
+  font-size: 11px; font-weight: 600; cursor: pointer; white-space: nowrap;
+}
+.addBtn:hover { filter: brightness(1.2); }
+
 /* Spinner */
 .spinner {
   width: 18px; height: 18px; border-radius: 50%;
