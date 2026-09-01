@@ -73,12 +73,14 @@ Backend `ComputedPool` (`backend/src/types/pool.ts`) ↔ frontend `Pool` (`front
 
 ## Key Domain Rules
 
-- **Metric definitions are frozen for V1** — changing them breaks V2 simulation inputs. Newer metrics (`feeToTvlPct`, `volumeCV`, `correlation7d/30d`) are additive fields computed alongside, never redefinitions.
+- **Metric definitions were frozen for V1** and deliberately revised once (see APR and day-data hygiene below) after the table was found not to reconcile: TVL was reported as a current value while APR divided by a windowed average. Treat further changes the same way — they feed V2 simulation inputs, so revise deliberately and update this file. Newer metrics (`feeToTvlPct`, `volumeCV`, `correlation7d/30d`) are additive fields computed alongside, never redefinitions.
 - **FATE filter preset** (`FATE_FILTERS` in `frontend/src/utils/constants.ts`): APR 30–500%, TVL ≥ $1M, volatility < 15%. Correlation is intentionally not auto-filtered — stable-quoted pools report correlation 0 (constant stablecoin price) and would always be excluded.
 - **In-range time** is time-weighted over recorded snapshots: each snapshot's state holds until the next (step function), and gaps longer than `SNAPSHOT_MAX_GAP_SEC` (90 min) count as *unobserved* rather than being attributed to the last known state — so downtime lowers `coverage` instead of inflating in-range time. `npm run verify:history` (in `backend/`) checks this math against synthetic series.
 - **Volatility token selection:** if either token is a known stablecoin, use the other token's price; if neither, use token0
 - **Stablecoins:** USDC, USDT, DAI, FRAX, LUSD, crvUSD
-- **APR formula:** `(avgDailyFees / avgDailyTVL) * 365 * 100` — fee APR only, excludes IL
+- **APR formula:** `mean(dayFees / dayTVL) * 365 * 100` — the mean of each day's yield, not `mean(fees) / mean(TVL)`. The ratio of means weights high-TVL days more heavily and skews pools whose TVL trends across the window. Fee APR only, excludes IL.
+- **Day-data hygiene** (`usableDays` in `services/metrics.ts`, applied once in `routes/pools.ts` so every metric shares one sample): the current UTC day is excluded because it is still accumulating and averaging it as a whole day understates every rate, worst on short timeframes; days reporting TVL above `TVL_CEILING` ($50B) are excluded because the subgraph occasionally emits a corrupt figure (one pool reported $9.9T on a single day against a $1.7M median, which alone produced a $397B 90-day average). Pools whose *current* TVL exceeds the ceiling are dropped entirely.
+- **The `tvl` field is the timeframe average**, not current TVL — the same denominator the APR is measured against, so a row reconciles: `avgDailyFees / tvl * 365 * 100` reproduces `apr` to ~0.004pp median. Displayed as **Avg TVL**.
 - **Correlation:** Pearson correlation of daily USD prices for both tokens, aligned by date
 
 ## Supported Networks

@@ -1,5 +1,21 @@
 import { SubgraphPoolDayData, SubgraphTokenDayData } from "../types/subgraph";
-import { STABLECOINS } from "../constants";
+import { STABLECOINS, TVL_CEILING } from "../constants";
+
+// Restricts a pool's history to days that can be measured, dropping two kinds
+// of record:
+//
+//   1. The current UTC day, which is still accumulating. Its feesUSD/volumeUSD
+//      are partial, so averaging it as a whole day understates every rate --
+//      worst on short timeframes.
+//   2. Days whose reported TVL is not credible. The subgraph occasionally emits
+//      a corrupt figure (one pool reports $9.9T on a single day against a $1.7M
+//      median), and one such day wrecks a 90-day average.
+export function usableDays(dayDatas: SubgraphPoolDayData[]): SubgraphPoolDayData[] {
+  const todayStart = Math.floor(Date.now() / 1000 / 86_400) * 86_400;
+  return dayDatas.filter(
+    (d) => d.date < todayStart && parseFloat(d.tvlUSD) <= TVL_CEILING
+  );
+}
 
 function mean(values: number[]): number {
   if (values.length === 0) return 0;
@@ -23,9 +39,16 @@ export function computeAvgDailyTVL(dayDatas: SubgraphPoolDayData[]): number {
   return mean(dayDatas.map((d) => parseFloat(d.tvlUSD)));
 }
 
-export function computeAPR(avgDailyFees: number, avgDailyTVL: number): number {
-  if (avgDailyTVL === 0) return 0;
-  return (avgDailyFees / avgDailyTVL) * 365 * 100;
+// Mean of each day's yield, not mean(fees) / mean(TVL): the ratio of means
+// silently weights high-TVL days more heavily, which skews the result whenever
+// a pool's TVL trends over the window.
+export function computeAPR(dayDatas: SubgraphPoolDayData[]): number {
+  const dailyYields = dayDatas
+    .map((d) => ({ fees: parseFloat(d.feesUSD), tvl: parseFloat(d.tvlUSD) }))
+    .filter((d) => d.tvl > 0)
+    .map((d) => d.fees / d.tvl);
+  if (dailyYields.length === 0) return 0;
+  return mean(dailyYields) * 365 * 100;
 }
 
 // Max deviation from mean, normalized as percentage of mean

@@ -36,6 +36,10 @@ export const VALID_NETWORKS = Object.keys(NETWORKS);
 
 export const TOP_POOLS_COUNT = 500;
 export const TVL_FLOOR = 1_000_000;
+// Uniswap V3's entire TVL is a few billion, so a single pool reporting more
+// than this is a subgraph data error (one reports $1.1T). Left in, it dominates
+// a TVL-sorted table.
+export const TVL_CEILING = 50_000_000_000;
 export const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 export const VALID_TIMEFRAMES = [7, 30, 90] as const;
 export type Timeframe = (typeof VALID_TIMEFRAMES)[number];

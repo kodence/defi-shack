@@ -26,7 +26,7 @@ export const COLUMNS: ColumnDef[] = [
   { key: "poolName", label: "Pool Name", filterable: false },
   { key: "exchange", label: "Exchange", filterable: false },
   { key: "network", label: "Network", filterable: false },
-  { key: "tvl", label: "TVL", filterable: true },
+  { key: "tvl", label: "Avg TVL", filterable: true },
   { key: "apr", label: "Avg APR", filterable: true },
   { key: "avgDailyFees", label: "Avg Daily Fees", filterable: true },
   { key: "avgDailyVolume", label: "Avg Daily Volume", filterable: true },

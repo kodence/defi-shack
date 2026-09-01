@@ -1,5 +1,7 @@
 import { Router, Request, Response } from "express";
-import { VALID_TIMEFRAMES, Timeframe, NETWORKS, VALID_NETWORKS } from "../constants";
+import {
+  VALID_TIMEFRAMES, Timeframe, NETWORKS, VALID_NETWORKS, TVL_CEILING,
+} from "../constants";
 import { getCached, setCache } from "../services/cache";
 import {
   fetchTopPools,
@@ -17,6 +19,7 @@ import {
   computeVolumeCV,
   computeCorrelationWindow,
   getVolatilityTokenId,
+  usableDays,
 } from "../services/metrics";
 import { ComputedPool, ApiResponse } from "../types/pool";
 
@@ -44,8 +47,10 @@ async function fetchPoolsForNetwork(
   const config = NETWORKS[networkKey];
   const subgraphUrl = config.subgraphUrl;
 
-  // Step 1: Fetch top pools
-  const pools = await fetchTopPools(subgraphUrl);
+  // Step 1: Fetch top pools, discarding ones whose reported TVL is not credible
+  const pools = (await fetchTopPools(subgraphUrl)).filter(
+    (p) => parseFloat(p.totalValueLockedUSD) <= TVL_CEILING
+  );
 
   // Step 2: Fetch pool day datas for all pools
   const poolIds = pools.map((p) => p.id);
@@ -67,11 +72,11 @@ async function fetchPoolsForNetwork(
 
   // Step 5: Compute metrics for each pool
   return pools.map((pool) => {
-    const dayDatas = poolDayDatasMap.get(pool.id) || [];
+    const dayDatas = usableDays(poolDayDatasMap.get(pool.id) || []);
     const avgDailyFees = computeAvgDailyFees(dayDatas);
     const avgDailyVolume = computeAvgDailyVolume(dayDatas);
     const avgDailyTVL = computeAvgDailyTVL(dayDatas);
-    const apr = computeAPR(avgDailyFees, avgDailyTVL);
+    const apr = computeAPR(dayDatas);
 
     const volatilityTokenId = getVolatilityTokenId(pool.token0, pool.token1);
     const volatilityData = tokenDayDatasMap.get(volatilityTokenId) || [];
@@ -94,7 +99,9 @@ async function fetchPoolsForNetwork(
       exchange: config.exchange,
       network: config.name,
       networkId: networkKey,
-      tvl: parseFloat(pool.totalValueLockedUSD),
+      // Averaged over the timeframe, matching the APR denominator. Reporting
+      // current TVL here instead leaves the row unable to reconcile.
+      tvl: avgDailyTVL,
       apr,
       avgDailyFees,
       avgDailyVolume,
