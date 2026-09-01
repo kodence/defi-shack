@@ -9,7 +9,7 @@ export default function Navbar() {
     <nav className="navbar is-dark" role="navigation" aria-label="main navigation">
       <div className="navbar-brand">
         <Link className="navbar-item has-text-weight-bold" href="/">
-          LPSim
+          DeFi Shack
         </Link>
       </div>
       <div className="navbar-menu is-active">
@@ -47,7 +47,7 @@ export default function Navbar() {
             href="/user-guide.html"
             target="_blank"
             rel="noopener noreferrer"
-            title="Open the LPSim field guide in a new tab"
+            title="Open the DeFi Shack field guide in a new tab"
           >
             Guide <span aria-hidden="true" style={{ marginLeft: "0.3em", opacity: 0.7 }}>&#8599;</span>
           </a>

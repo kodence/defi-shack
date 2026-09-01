@@ -6,7 +6,7 @@ import path from "path";
 // 22.5+), so there is no native module to compile.
 
 const DATA_DIR = path.resolve(__dirname, "../../data");
-const DB_PATH = process.env.LPSIM_DB_PATH ?? path.join(DATA_DIR, "lpsim.db");
+const DB_PATH = process.env.DEFISHACK_DB_PATH ?? path.join(DATA_DIR, "defishack.db");
 
 let db: DatabaseSync | null = null;
 

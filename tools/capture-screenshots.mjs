@@ -21,7 +21,7 @@ import { fileURLToPath } from "node:url";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const OUT_DIR = path.join(HERE, "screenshots");
-const APP = process.env.LPSIM_APP ?? "http://localhost:3000";
+const APP = process.env.DEFISHACK_APP ?? "http://localhost:3000";
 const PORT = Number(process.env.CDP_PORT ?? 9223);
 const CHROME = process.env.CHROME_PATH
   ?? "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
@@ -144,7 +144,7 @@ async function launch() {
     "--disable-extensions",
     `--remote-debugging-port=${PORT}`,
     // Kept out of the repo; it is ~60 MB of Chrome profile
-    `--user-data-dir=${path.join(tmpdir(), "lpsim-capture-profile")}`,
+    `--user-data-dir=${path.join(tmpdir(), "defishack-capture-profile")}`,
     "about:blank",
   ], { stdio: "ignore" });
 
@@ -219,7 +219,7 @@ async function main() {
     console.log("Portfolio...");
     // The headless profile persists between runs, so start from an empty
     // portfolio or repeated runs stack duplicate positions into the figure.
-    await cdp.eval(`(() => { localStorage.removeItem('lpsim.portfolio.v1'); return true; })()`);
+    await cdp.eval(`(() => { localStorage.removeItem('defishack.portfolio.v1'); return true; })()`);
     const addToPortfolio = async () => {
       await cdp.eval(`(() => {
         const b = [...document.querySelectorAll('button')]
@@ -250,7 +250,7 @@ async function main() {
     console.log("Track...");
     await cdp.goto(`${APP}/track`);
     await sleep(800);
-    const wallet = process.env.LPSIM_DEMO_WALLET;
+    const wallet = process.env.DEFISHACK_DEMO_WALLET;
     if (wallet) {
       await cdp.eval(`(() => {
         const i = document.querySelector('input[placeholder^="Wallet address"]');
@@ -274,7 +274,7 @@ async function main() {
       await cdp.shot("in-range-history", '[data-shot="hist"]')
         .catch(e => console.log("  (skipped history:", e.message + ")"));
     } else {
-      console.log("  (set LPSIM_DEMO_WALLET to capture Track figures)");
+      console.log("  (set DEFISHACK_DEMO_WALLET to capture Track figures)");
     }
     }
 

@@ -1,4 +1,4 @@
-# LPSim
+# DeFi Shack
 
 Web application for discovering DeFi liquidity pool opportunities. V1 focuses on Uniswap V3 pools on Ethereum.
 
@@ -15,7 +15,7 @@ Web application for discovering DeFi liquidity pool opportunities. V1 focuses on
 ## Project Structure
 
 ```
-LPSim/
+<repo root>/
 ├── backend/             Express API server (port 3001)
 │   └── src/
 │       ├── index.ts            Server entry point

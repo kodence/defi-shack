@@ -1,11 +1,21 @@
 import { CustomCheck, CustomPosition, CustomStats } from "@/types/custom";
 
-const KEY = "lpsim.custom.v1";
+const KEY = "defishack.custom.v1";
+const LEGACY_KEY = "lpsim.custom.v1";   // pre-rename; read once, then migrated
 
 export function loadCustomPositions(): CustomPosition[] {
   if (typeof window === "undefined") return [];
   try {
-    const raw = localStorage.getItem(KEY);
+    let raw = localStorage.getItem(KEY);
+    if (raw === null) {
+      // Carry positions saved under the old name across the rename
+      const legacy = localStorage.getItem(LEGACY_KEY);
+      if (legacy !== null) {
+        localStorage.setItem(KEY, legacy);
+        localStorage.removeItem(LEGACY_KEY);
+        raw = legacy;
+      }
+    }
     const parsed = raw ? (JSON.parse(raw) as CustomPosition[]) : [];
     return Array.isArray(parsed) ? parsed : [];
   } catch {

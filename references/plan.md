@@ -1,4 +1,4 @@
-# LPSim — Project Outline
+# DeFi Shack — Project Outline
 
 ## Terminology
 

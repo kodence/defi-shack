@@ -9,7 +9,7 @@ import { NETWORKS } from "@/utils/constants";
 import CustomPositions from "@/components/track/CustomPositions";
 import PositionHistoryPanel from "@/components/track/PositionHistoryPanel";
 
-const ADDR_KEY = "lpsim.track.address";
+const ADDR_KEY = "defishack.track.address";
 const ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
 
 function fmtPrice(v: number): string {
@@ -110,7 +110,8 @@ export default function TrackPage() {
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(ADDR_KEY);
+      const saved = localStorage.getItem(ADDR_KEY)
+        ?? localStorage.getItem("lpsim.track.address");   // pre-rename key
       if (saved && ADDRESS_RE.test(saved)) {
         setAddress(saved);
         load(saved, NETWORKS.map(n => n.key));

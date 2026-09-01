@@ -1,14 +1,24 @@
 import { SavedPosition } from "@/types/portfolio";
 import { SimulationConfig, SimulationResult } from "@/types/simulator";
 
-const KEY = "lpsim.portfolio.v1";
+const KEY = "defishack.portfolio.v1";
+const LEGACY_KEY = "lpsim.portfolio.v1";   // pre-rename; read once, then migrated
 
 export const STABLE_SYMBOLS = new Set(["USDC", "USDT", "DAI", "FRAX", "LUSD", "crvUSD"]);
 
 export function loadPortfolio(): SavedPosition[] {
   if (typeof window === "undefined") return [];
   try {
-    const raw = localStorage.getItem(KEY);
+    let raw = localStorage.getItem(KEY);
+    if (raw === null) {
+      // Carry a portfolio saved under the old name across the rename
+      const legacy = localStorage.getItem(LEGACY_KEY);
+      if (legacy !== null) {
+        localStorage.setItem(KEY, legacy);
+        localStorage.removeItem(LEGACY_KEY);
+        raw = legacy;
+      }
+    }
     const parsed = raw ? (JSON.parse(raw) as SavedPosition[]) : [];
     return Array.isArray(parsed) ? parsed : [];
   } catch {

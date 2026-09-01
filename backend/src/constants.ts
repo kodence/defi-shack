@@ -55,8 +55,8 @@ export const PORT = 3001;
 // How often the background poller refreshes watched wallets. Each poll costs
 // metered Graph queries per watched wallet, so override with care.
 export const SNAPSHOT_POLL_INTERVAL_MS =
-  Number(process.env.LPSIM_POLL_INTERVAL_MS) > 0
-    ? Number(process.env.LPSIM_POLL_INTERVAL_MS)
+  Number(process.env.DEFISHACK_POLL_INTERVAL_MS) > 0
+    ? Number(process.env.DEFISHACK_POLL_INTERVAL_MS)
     : 15 * 60 * 1000;
 // Longest gap between snapshots still treated as continuous observation.
 // Anything longer (server down, wallet unwatched) counts as unobserved rather

@@ -1,7 +1,7 @@
 import { PoolType, SimulationConfig } from "./simulator";
 
 // A simulated position saved from the simulator into the portfolio builder.
-// Stored in localStorage (key: lpsim.portfolio.v1) — metrics are a snapshot
+// Stored in localStorage (key: defishack.portfolio.v1) — metrics are a snapshot
 // from save time and refresh when the allocation is edited or stress-tested.
 export interface SavedPosition {
   id:       string;

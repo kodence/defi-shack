@@ -1,4 +1,4 @@
-<title>LPSim Field Guide</title>
+<title>DeFi Shack Field Guide</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
@@ -524,10 +524,10 @@
 <div class="wrap">
 
   <header class="top">
-    <p class="eyebrow">LPSim &middot; Operator's manual</p>
-    <h1>LPSim Field Guide</h1>
+    <p class="eyebrow">DeFi Shack &middot; Operator's manual</p>
+    <h1>DeFi Shack Field Guide</h1>
     <p class="standfirst">
-      LPSim turns the FATE, RANGE, VALID and SMART frameworks into four screens. This guide walks
+      DeFi Shack turns the FATE, RANGE, VALID and SMART frameworks into four screens. This guide walks
       the whole loop &mdash; from screening hundreds of pools down to a position you can defend,
       size, and monitor &mdash; and tells you which numbers to trust along the way.
     </p>
@@ -572,7 +572,7 @@
         <li><a href="#cheat"><span class="n">&mdash;</span><span>Threshold cheat sheet</span></a></li>
         <li><a href="#faster"><span class="n">&mdash;</span><span>Work faster</span></a></li>
         <li><a href="#limits"><span class="n">&mdash;</span><span>What it doesn't cover</span></a></li>
-        <li><a href="#run"><span class="n">&mdash;</span><span>Running LPSim</span></a></li>
+        <li><a href="#run"><span class="n">&mdash;</span><span>Running DeFi Shack</span></a></li>
       </ol>
     </nav>
 
@@ -589,7 +589,7 @@
         <div class="sec-head"><span class="step-n">00</span><h2>Before you start</h2></div>
         <p class="framework">What the data is, and isn't</p>
         <p>
-          LPSim reads live Uniswap V3 data from The Graph for <strong>Ethereum, Arbitrum and
+          DeFi Shack reads live Uniswap V3 data from The Graph for <strong>Ethereum, Arbitrum and
           Base</strong>. Everything on Discovery and every live simulation is real on-chain
           history &mdash; not estimates.
         </p>
@@ -606,7 +606,7 @@
           </div>
           <div class="k">Fee APR only</div>
           <div class="v">
-            Every APR in LPSim is <strong>fee income</strong>. It excludes divergence loss by
+            Every APR in DeFi Shack is <strong>fee income</strong>. It excludes divergence loss by
             design, which is why steps <a href="#dl">05</a> and <a href="#valid">06</a> exist.
             An APR you like is only half an answer.
           </div>
@@ -616,7 +616,7 @@
           <p>
             Screen on Discovery &rarr; simulate one pool properly &rarr; save it to the Portfolio
             &rarr; stress the whole book &rarr; deploy on the DEX &rarr; watch it on Track.
-            LPSim never touches your wallet or signs anything; it is a research and monitoring
+            DeFi Shack never touches your wallet or signs anything; it is a research and monitoring
             tool, and you execute elsewhere.
           </p>
         </div>
@@ -709,7 +709,7 @@
         <p>
           Note the pool's TVL before you leave. FATE caps a position at <code>5%</code> of pool
           TVL &mdash; up to <code>10%</code> when the same pair has deep liquidity in another
-          pool. LPSim checks this for you later, but choosing a pool that is too small for your
+          pool. DeFi Shack checks this for you later, but choosing a pool that is too small for your
           intended size wastes the whole analysis.
         </p>
       </section>
@@ -726,7 +726,7 @@
         <div class="spec">
           <div class="k">Orientation</div>
           <div class="v">
-            LPSim auto-orients so the price reads naturally &mdash; a stablecoin becomes the
+            DeFi Shack auto-orients so the price reads naturally &mdash; a stablecoin becomes the
             quote, so you see <code>2,475 USDC/WETH</code>, not <code>0.0004 WETH/USDC</code>.
             <span class="ui">&#8645; flip</span> swaps it. The flip is instant and local: it
             inverts the chart and your bounds without refetching, and APR is unchanged.
@@ -740,7 +740,7 @@
           </div>
           <div class="k">Investment (USD)</div>
           <div class="v">
-            <strong>Set your real deployment size now.</strong> LPSim dilutes APR by your own
+            <strong>Set your real deployment size now.</strong> DeFi Shack dilutes APR by your own
             liquidity, so a large deposit into a thin pool visibly lowers the projected return
             &mdash; which is exactly the effect you want to see before committing.
           </div>
@@ -836,7 +836,7 @@
         <p class="framework">Simulator &middot; realistic vs worst-case</p>
         <p>
           The headline APR depends entirely on how much liquidity you assume you are competing
-          with. LPSim reconstructs the pool's real tick-level liquidity, so you can ask that
+          with. DeFi Shack reconstructs the pool's real tick-level liquidity, so you can ask that
           question four ways.
         </p>
 
@@ -943,7 +943,7 @@
           <div class="v">
             <strong>Divergence loss is a feature, not a bug.</strong> The pool sells the asset as
             it rises and buys as it falls. Expect <span class="pill b">slow</span> verdicts and
-            judge the position on income and the exposure you wanted instead. LPSim says so in the
+            judge the position on income and the exposure you wanted instead. DeFi Shack says so in the
             panel footer.
           </div>
           <div class="k">Stable &ndash; stable</div>
@@ -1030,7 +1030,7 @@
         <h3>The stress test</h3>
         <p>
           Set a market-wide move and run it. Stablecoins stay pinned at <code>$1</code> while
-          every other asset moves together, and LPSim aggregates divergence loss, post-move value
+          every other asset moves together, and DeFi Shack aggregates divergence loss, post-move value
           and <strong>how many days of portfolio fees repay it</strong>.
         </p>
         <!--FIG:portfolio|wide|Two saved positions under a &minus;20% market move. The correlated WBTC/WETH pair takes <b>no divergence loss at all</b> while the crypto&ndash;stable position absorbs it &mdash; the offsetting effect a portfolio is supposed to produce.-->
@@ -1064,7 +1064,7 @@
         <div class="sec-head"><span class="step-n">08</span><h2>Track and rebalance</h2></div>
         <p class="framework">Track &middot; SMART &mdash; situation, method, analysis, range, timing</p>
         <p>
-          Paste any wallet address and LPSim pulls its live Uniswap V3 positions across the
+          Paste any wallet address and DeFi Shack pulls its live Uniswap V3 positions across the
           selected networks. No connection or signature &mdash; it is public chain data, so you
           can watch any address.
         </p>
@@ -1100,7 +1100,7 @@
 
         <p>
           Those four numbers describe the position <em>right now</em>. Underneath each card,
-          LPSim also shows how they have moved over time &mdash; see
+          DeFi Shack also shows how they have moved over time &mdash; see
           <a href="#history">in-range history</a>.
         </p>
 
@@ -1117,14 +1117,14 @@
 
         <h3>When to rebalance</h3>
         <p>
-          LPSim raises SMART flags on each card. The framework's timing rules are the valuable
+          DeFi Shack raises SMART flags on each card. The framework's timing rules are the valuable
           part:
         </p>
         <ul>
           <li><strong>Wait 48&ndash;72 hours</strong> before acting on an out-of-range position
             unless it is clearly deteriorating &mdash; price often comes back.</li>
           <li><strong>The best moment is your original entry price</strong>, where divergence
-            loss is roughly zero. LPSim flags it when price returns within
+            loss is roughly zero. DeFi Shack flags it when price returns within
             <code>&plusmn;2%</code>.</li>
           <li><strong>Prefer adding capital over swapping.</strong> Adding fresh capital to
             restore your ratio avoids realising the loss; swapping locks it in and may trigger
@@ -1143,7 +1143,7 @@
           <b>Fees shown are unclaimed only</b>
           <p>
             The Uniswap subgraph reports corrupted lifetime collected-fee data (the second token
-            mirrors the first), so LPSim excludes it rather than showing a wrong number. For a
+            mirrors the first), so DeFi Shack excludes it rather than showing a wrong number. For a
             position that has already claimed fees, your true earnings and true
             <em>Net vs HODL</em> are <strong>better</strong> than displayed. Passive positions
             that never claimed are exact.
@@ -1164,7 +1164,7 @@
 
         <h3>How history accrues</h3>
         <p>
-          LPSim records a snapshot of every position: its range status, price, value, unclaimed
+          DeFi Shack records a snapshot of every position: its range status, price, value, unclaimed
           fees and divergence loss. There are two sources, and you only control the second.
         </p>
         <div class="spec">
@@ -1278,7 +1278,7 @@
           </table>
         </div>
         <p>
-          Over several positions this becomes the most honest feedback loop LPSim offers: your
+          Over several positions this becomes the most honest feedback loop DeFi Shack offers: your
           projected APR was a model, but in-range time is what actually happened. If your ranges
           consistently spend a third of their life out of range, the fix is in how you set them
           &mdash; not in the pool you picked.
@@ -1287,10 +1287,10 @@
         <div class="note">
           <b>Tuning and retention of the data</b>
           <p>
-            <code>LPSIM_POLL_INTERVAL_MS</code> changes the snapshot cadence &mdash; shorter gives
+            <code>DEFISHACK_POLL_INTERVAL_MS</code> changes the snapshot cadence &mdash; shorter gives
             denser history at the cost of more queries. Snapshots older than <code>180</code>
             days are pruned automatically. Everything lives in a local SQLite file
-            (<code>backend/data/lpsim.db</code>), so history is per-machine and is not shared
+            (<code>backend/data/defishack.db</code>), so history is per-machine and is not shared
             between installs.
           </p>
         </div>
@@ -1301,7 +1301,7 @@
         <div class="sec-head"><span class="step-n">10</span><h2>Positions elsewhere</h2></div>
         <p class="framework">Track &middot; custom positions</p>
         <p>
-          For pools LPSim cannot see &mdash; another DEX, another chain &mdash; track them by
+          For pools DeFi Shack cannot see &mdash; another DEX, another chain &mdash; track them by
           hand. Same analytics, entered manually.
         </p>
         <ol class="body-list">
@@ -1427,7 +1427,7 @@
             past behaviour. Markets are free to do something new.</div>
         </div>
         <div class="note bad">
-          <b>LPSim is research, not advice</b>
+          <b>DeFi Shack is research, not advice</b>
           <p>
             It never connects a wallet, holds funds, or executes anything. Every deployment,
             claim and rebalance happens on the DEX, by you, with your own judgement.
@@ -1437,7 +1437,7 @@
 
       <!-- Run -->
       <section id="run">
-        <div class="sec-head"><h2>Running LPSim</h2></div>
+        <div class="sec-head"><h2>Running DeFi Shack</h2></div>
         <p class="framework">Local setup</p>
         <div class="spec">
           <div class="k">npm run dev</div>
@@ -1446,12 +1446,12 @@
           <div class="k">THE_GRAPH_API_KEY</div>
           <div class="v">Required, in the root <code>.env</code>. Everything on Discovery and
             Track depends on it.</div>
-          <div class="k">LPSIM_POLL_INTERVAL_MS</div>
+          <div class="k">DEFISHACK_POLL_INTERVAL_MS</div>
           <div class="v">Snapshot cadence for watched wallets. Default <code>15</code> minutes;
             lower it for denser history at the cost of more queries.</div>
-          <div class="k">LPSIM_DB_PATH</div>
+          <div class="k">DEFISHACK_DB_PATH</div>
           <div class="v">Moves the history database. Default
-            <code>backend/data/lpsim.db</code>.</div>
+            <code>backend/data/defishack.db</code>.</div>
           <div class="k">npm run verify:history</div>
           <div class="v">In <code>backend/</code> &mdash; checks the in-range time-attribution
             math against synthetic series.</div>

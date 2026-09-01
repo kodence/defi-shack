@@ -4,7 +4,7 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 
 export const metadata: Metadata = {
-  title: "LPSim",
+  title: "DeFi Shack",
   description: "DeFi liquidity pool discovery and simulation",
 };
 
