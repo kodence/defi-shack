@@ -5,6 +5,10 @@
 // running (npm run dev) before this is used.
 //
 //   node tools/capture-screenshots.mjs
+//   node tools/capture-screenshots.mjs --only=track,simulator
+//
+// Groups: discovery, simulator, portfolio, track. Limiting the run avoids
+// regenerating figures whose captions quote numbers that would then drift.
 //
 // Output: tools/screenshots/*.png at 2x for legible text.
 
@@ -26,6 +30,10 @@ const CHROME = process.env.CHROME_PATH
 // than a stable-quoted pair, so the panels show their full behaviour.
 const POOL_A = "/simulator?network=ethereum&pool=0x4585fe77225b41b697c938b018e2ac67ac5a20c0";
 const POOL_B = "/simulator?network=ethereum&pool=0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640";
+
+const onlyArg = process.argv.find(a => a.startsWith("--only="));
+const ONLY = onlyArg ? new Set(onlyArg.slice(7).split(",").map(s => s.trim())) : null;
+const wants = (group) => !ONLY || ONLY.has(group);
 
 // ── Minimal CDP client over Node's native WebSocket ──────────────────────────
 class Cdp {
@@ -168,12 +176,15 @@ async function main() {
     });
 
     // ── Discovery ────────────────────────────────────────────────────────────
+    if (wants("discovery")) {
     console.log("Discovery (first load fetches every pool, this is slow)...");
     await cdp.goto(`${APP}/`);
     await cdp.waitFor("table tbody tr:nth-child(5)", 180_000);
     await cdp.shot("discovery", ".container.is-fluid", { maxHeight: 620 });
+    }
 
     // ── Simulator ────────────────────────────────────────────────────────────
+    if (wants("simulator") || wants("portfolio")) {
     console.log("Simulator...");
     await cdp.goto(`${APP}${POOL_A}`);
     await cdp.waitFor("svg");
@@ -194,13 +205,17 @@ async function main() {
       __mark('VALID checklist', 'valid');
       return true;
     })()`);
-    await cdp.shot("metric-cards", "main > div:first-of-type", { pad: 10 });
-    await cdp.shot("apr-panel", "aside", { maxHeight: 1400 });
-    await cdp.shot("liquidity", '[data-shot="liq"]');
-    await cdp.shot("divergence", '[data-shot="dl"]');
-    await cdp.shot("valid", '[data-shot="valid"]');
+    if (wants("simulator")) {
+      await cdp.shot("metric-cards", "main > div:first-of-type", { pad: 10 });
+      await cdp.shot("apr-panel", "aside", { maxHeight: 1400 });
+      await cdp.shot("liquidity", '[data-shot="liq"]');
+      await cdp.shot("divergence", '[data-shot="dl"]');
+      await cdp.shot("valid", '[data-shot="valid"]');
+    }
+    }
 
     // ── Portfolio: save two real positions through the UI ─────────────────────
+    if (wants("portfolio")) {
     console.log("Portfolio...");
     // The headless profile persists between runs, so start from an empty
     // portfolio or repeated runs stack duplicate positions into the figure.
@@ -228,8 +243,10 @@ async function main() {
     })()`);
     await sleep(6000);
     await cdp.shot("portfolio", ".container.is-fluid", { maxHeight: 900 });
+    }
 
     // ── Track ────────────────────────────────────────────────────────────────
+    if (wants("track")) {
     console.log("Track...");
     await cdp.goto(`${APP}/track`);
     await sleep(800);
@@ -258,6 +275,7 @@ async function main() {
         .catch(e => console.log("  (skipped history:", e.message + ")"));
     } else {
       console.log("  (set LPSIM_DEMO_WALLET to capture Track figures)");
+    }
     }
 
     console.log(`\nDone. Files in ${OUT_DIR}`);

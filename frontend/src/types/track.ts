@@ -66,6 +66,7 @@ export interface TrackedPosition {
   currentPrice: number;
   lowerPrice:   number;
   upperPrice:   number;
+  fullRange:    boolean;
 
   baseAmount:   number;
   quoteAmount:  number;

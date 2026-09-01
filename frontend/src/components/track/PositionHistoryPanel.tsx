@@ -115,7 +115,9 @@ export default function PositionHistoryPanel({ history, watched, pollMins }: Pro
         <div className="mt-2">
           <div className="is-flex is-align-items-baseline" style={{ gap: "0.5rem" }}>
             <p className="heading mb-0">Earnings retention</p>
-            <strong className={trend.direction === "up" ? "has-text-success" : trend.direction === "down" ? "has-text-danger" : ""}>
+            {/* Colour the level by whether fees are ahead of divergence; the
+                arrow beside it carries the direction of travel. */}
+            <strong className={trend.last >= 0 ? "has-text-success" : "has-text-danger"}>
               {(trend.last * 100).toFixed(0)}%
             </strong>
             <span className="is-size-7 has-text-grey">

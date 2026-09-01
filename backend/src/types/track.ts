@@ -64,6 +64,9 @@ export interface TrackedPosition {
   currentPrice: number;    // oriented: quote per base
   lowerPrice:   number;
   upperPrice:   number;
+  // Position spans (effectively) every tick. Its bounds are ~0 and ~infinity,
+  // so they are not meaningful to display or to measure distance against.
+  fullRange:    boolean;
 
   baseAmount:   number;    // current holdings in the position
   quoteAmount:  number;

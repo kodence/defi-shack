@@ -132,6 +132,9 @@ function computePosition(
   const tick = parseInt(p.pool.tick!, 10);
   const tickLo = parseInt(p.tickLower.tickIdx, 10);
   const tickHi = parseInt(p.tickUpper.tickIdx, 10);
+  // Widest possible span is ~1,774,544 ticks; full-range mints land just inside
+  // it depending on the pool's tick spacing.
+  const fullRange = tickHi - tickLo >= 1_770_000;
 
   // Current USD prices (derivedETH; day-data fallback)
   let p0 = parseFloat(t0.derivedETH) * ethUsd;
@@ -226,6 +229,11 @@ function computePosition(
       kind: "out-of-range", severity: "bad",
       message: `Out of range (${side}) by ${(Math.abs(beyond) * 100).toFixed(1)}% — not earning. SMART: wait 48–72h unless clearly deteriorating.`,
     });
+  } else if (fullRange) {
+    smart.push({
+      kind: "info", severity: "good",
+      message: "Full-range position — it earns on every trade and cannot go out of range, but at a fraction of the capital efficiency of a concentrated range.",
+    });
   } else {
     const width = upperPrice - lowerPrice;
     const edgeDist = Math.min(currentPrice - lowerPrice, upperPrice - currentPrice) / Math.max(width, 1e-12);
@@ -254,7 +262,7 @@ function computePosition(
     poolName: `${baseSymbol} / ${quoteSymbol}`,
     feeLabel: feeLabelOf(parseInt(p.pool.feeTier, 10)),
     baseSymbol, quoteSymbol,
-    inRange, currentPrice, lowerPrice, upperPrice,
+    inRange, currentPrice, lowerPrice, upperPrice, fullRange,
     baseAmount: baseIs0 ? amt0 : amt1,
     quoteAmount: baseIs0 ? amt1 : amt0,
     positionValueUsd,

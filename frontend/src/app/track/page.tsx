@@ -28,8 +28,12 @@ function fmtAmount(v: number): string {
 const SEVERITY_CLASS = { good: "is-success", warn: "is-warning", bad: "is-danger" } as const;
 
 function RangeBar({ p }: { p: TrackedPosition }) {
+  // A full-range position's bounds are ~0 and ~1e39: printing them is noise and
+  // overflows the card, so show the price alone against a solid bar.
   const span = p.upperPrice - p.lowerPrice;
-  const pos = span > 0 ? Math.min(Math.max((p.currentPrice - p.lowerPrice) / span, 0), 1) : 0.5;
+  const pos = p.fullRange
+    ? 0.5
+    : span > 0 ? Math.min(Math.max((p.currentPrice - p.lowerPrice) / span, 0), 1) : 0.5;
   return (
     <div>
       <div style={{
@@ -43,9 +47,11 @@ function RangeBar({ p }: { p: TrackedPosition }) {
         }} />
       </div>
       <div className="is-flex is-justify-content-space-between is-size-7 has-text-grey">
-        <span>{fmtPrice(p.lowerPrice)}</span>
-        <span className="has-text-weight-semibold">{fmtPrice(p.currentPrice)} {p.quoteSymbol}/{p.baseSymbol}</span>
-        <span>{fmtPrice(p.upperPrice)}</span>
+        <span>{p.fullRange ? "Full range" : fmtPrice(p.lowerPrice)}</span>
+        <span className="has-text-weight-semibold">
+          {fmtPrice(p.currentPrice)} {p.quoteSymbol}/{p.baseSymbol}
+        </span>
+        <span>{p.fullRange ? "no bounds" : fmtPrice(p.upperPrice)}</span>
       </div>
     </div>
   );
