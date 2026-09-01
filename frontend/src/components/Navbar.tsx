@@ -39,6 +39,19 @@ export default function Navbar() {
             Track
           </Link>
         </div>
+        <div className="navbar-end">
+          {/* Static file in public/, so a plain anchor — not the Next router.
+              Opens in a new tab to preserve simulator state while you read. */}
+          <a
+            className="navbar-item"
+            href="/user-guide.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Open the LPSim field guide in a new tab"
+          >
+            Guide <span aria-hidden="true" style={{ marginLeft: "0.3em", opacity: 0.7 }}>&#8599;</span>
+          </a>
+        </div>
       </div>
     </nav>
   );
