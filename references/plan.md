@@ -226,4 +226,4 @@ None at this time. Ready to begin implementation.
 
 ### Repository
 
-https://github.com/kodence/lpSimulator.git
+https://github.com/kodence/defi-shack.git
