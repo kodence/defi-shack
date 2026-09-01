@@ -111,6 +111,15 @@ async function fetchPoolsForNetwork(
       ? (avgDailyFees / (activeTvl + REFERENCE_POSITION_USD)) * 365 * 100
       : null;
 
+    // The same band measured on today's liquidity rather than averaged over the
+    // window: what a deposit would actually compete with right now, and the
+    // basis Metrix Finance quotes. Its denominator does not move with the
+    // timeframe, so only the fee numerator changes between windows.
+    const liveActiveTvl = liq ? liq.activeTvlUsd : null;
+    const liveActiveApr = liveActiveTvl !== null
+      ? (avgDailyFees / (liveActiveTvl + REFERENCE_POSITION_USD)) * 365 * 100
+      : null;
+
     const volatilityTokenId = getVolatilityTokenId(pool.token0, pool.token1);
     const volatilityData = tokenDayDatasMap.get(volatilityTokenId) || [];
     const priceVolatility = computeVolatility(volatilityData);
@@ -139,6 +148,8 @@ async function fetchPoolsForNetwork(
       apr,
       activeTvl,
       activeApr,
+      liveActiveTvl,
+      liveActiveApr,
       avgDailyFees,
       avgDailyVolume,
       priceVolatility,

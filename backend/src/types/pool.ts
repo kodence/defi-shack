@@ -14,6 +14,9 @@ export interface ComputedPool {
   apr: number;
   activeTvl: number | null;
   activeApr: number | null;
+  // Same band, measured on current liquidity instead of the window average
+  liveActiveTvl: number | null;
+  liveActiveApr: number | null;
   avgDailyFees: number;
   avgDailyVolume: number;
   priceVolatility: number;

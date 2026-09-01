@@ -44,15 +44,24 @@ export default function PoolRow({ pool, dimmed, selected, onSelect }: PoolRowPro
         {formatPercent(pool.apr)}
       </td>
       <td
-        title="What a $10,000 position sitting within 2% of spot would earn, after diluting the liquidity already there"
+        title="What a $10,000 position within 2% of spot would have earned against the window's average in-range liquidity"
         className={pool.activeApr !== null && pool.activeApr >= 30 ? "has-text-weight-semibold" : undefined}
       >
         {pool.activeApr === null ? "-" : formatPercent(pool.activeApr)}
       </td>
+      <td
+        title="Same, measured against today's in-range liquidity rather than the window average - the basis Metrix Finance quotes"
+        className={pool.liveActiveApr !== null && pool.liveActiveApr >= 30 ? "has-text-weight-semibold" : undefined}
+      >
+        {pool.liveActiveApr === null ? "-" : formatPercent(pool.liveActiveApr)}
+      </td>
       <td>{formatUSD(pool.avgDailyFees)}</td>
       <td>{formatUSD(pool.avgDailyVolume)}</td>
-      <td title="Liquidity sitting within 2% of spot">
+      <td title="Liquidity within 2% of spot, averaged over the timeframe">
         {pool.activeTvl === null ? "-" : formatUSD(pool.activeTvl)}
+      </td>
+      <td title="Liquidity within 2% of spot right now - what a deposit would compete with today. Does not change with the timeframe.">
+        {pool.liveActiveTvl === null ? "-" : formatUSD(pool.liveActiveTvl)}
       </td>
       <td
         title="Avg daily fees ÷ avg TVL — FATE targets ≥ 0.059% for actively traded pools"

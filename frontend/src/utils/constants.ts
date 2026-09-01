@@ -13,6 +13,8 @@ export type SortableColumn =
   | "avgDailyVolume"
   | "activeTvl"
   | "activeApr"
+  | "liveActiveTvl"
+  | "liveActiveApr"
   | "feeToTvlPct"
   | "volumeCV"
   | "correlation"
@@ -30,10 +32,12 @@ export const COLUMNS: ColumnDef[] = [
   { key: "network", label: "Network", filterable: false },
   { key: "tvl", label: "Avg TVL", filterable: true },
   { key: "apr", label: "Pool APR", filterable: true },
-  { key: "activeApr", label: "In-Range APR ($10k)", filterable: true },
+  { key: "activeApr", label: "In-Range APR (avg)", filterable: true },
+  { key: "liveActiveApr", label: "In-Range APR (now)", filterable: true },
   { key: "avgDailyFees", label: "Avg Daily Fees", filterable: true },
   { key: "avgDailyVolume", label: "Avg Daily Volume", filterable: true },
-  { key: "activeTvl", label: "In-Range TVL", filterable: true },
+  { key: "activeTvl", label: "In-Range TVL (avg)", filterable: true },
+  { key: "liveActiveTvl", label: "In-Range TVL (now)", filterable: true },
   { key: "feeToTvlPct", label: "Fee/TVL", filterable: true },
   { key: "volumeCV", label: "Vol CV", filterable: true },
   { key: "correlation", label: "Correlation", filterable: true },
