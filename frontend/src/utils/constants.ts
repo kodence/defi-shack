@@ -24,14 +24,21 @@ export interface ColumnDef {
   key: SortableColumn;
   label: string;
   filterable: boolean;
+  // Hidden on first load; still togglable from the Columns control. Used to
+  // keep the default table narrow now that there are several APR variants.
+  defaultHidden?: boolean;
 }
+
+export const COLUMN_PREFS_KEY = "defishack.columns.v1";
 
 export const COLUMNS: ColumnDef[] = [
   { key: "poolName", label: "Pool Name", filterable: false },
   { key: "exchange", label: "Exchange", filterable: false },
   { key: "network", label: "Network", filterable: false },
   { key: "tvl", label: "Avg TVL", filterable: true },
-  { key: "apr", label: "Pool APR", filterable: true },
+  // Fees spread over all liquidity, most of it out of range. The in-range
+  // columns are the actionable ones, so this is off unless asked for.
+  { key: "apr", label: "Pool APR", filterable: true, defaultHidden: true },
   { key: "activeApr", label: "In-Range APR (avg)", filterable: true },
   { key: "liveActiveApr", label: "In-Range APR (now)", filterable: true },
   { key: "avgDailyFees", label: "Avg Daily Fees", filterable: true },

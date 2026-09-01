@@ -180,7 +180,19 @@ async function main() {
     console.log("Discovery (first load fetches every pool, this is slow)...");
     await cdp.goto(`${APP}/`);
     await cdp.waitFor("table tbody tr:nth-child(5)", 180_000);
+    // The table is wider than the default viewport, so widen it to whatever the
+    // table actually needs rather than capturing a truncated crop.
+    const needed = await cdp.eval(
+      "Math.ceil(document.querySelector('table').scrollWidth) + 280"
+    );
+    await cdp.send("Emulation.setDeviceMetricsOverride", {
+      width: Math.max(1460, needed), height: 2600, deviceScaleFactor: 2, mobile: false,
+    });
+    await sleep(600);
     await cdp.shot("discovery", ".container.is-fluid", { maxHeight: 620 });
+    await cdp.send("Emulation.setDeviceMetricsOverride", {
+      width: 1460, height: 2600, deviceScaleFactor: 2, mobile: false,
+    });
     }
 
     // ── Simulator ────────────────────────────────────────────────────────────

@@ -1,8 +1,10 @@
 "use client";
 
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useEffect } from "react";
 import { Pool } from "@/types/pool";
-import { ROWS_PER_PAGE, MAX_DISPLAY_ROWS } from "@/utils/constants";
+import {
+  ROWS_PER_PAGE, MAX_DISPLAY_ROWS, COLUMNS, COLUMN_PREFS_KEY, SortableColumn,
+} from "@/utils/constants";
 import TableHeader from "./TableHeader";
 import PoolRow from "./PoolRow";
 import Pagination from "./Pagination";
@@ -19,6 +21,43 @@ export default function PoolTable({ pools, hideFiltered }: PoolTableProps) {
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
   const [showOnlyChecked, setShowOnlyChecked] = useState(false);
   const [assetQuery, setAssetQuery] = useState("");
+  const [hiddenColumns, setHiddenColumns] = useState<Set<string>>(
+    () => new Set(COLUMNS.filter((c) => c.defaultHidden).map((c) => c.key))
+  );
+  const [columnsOpen, setColumnsOpen] = useState(false);
+
+  // Remember the choice, so re-showing a column survives a reload
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(COLUMN_PREFS_KEY);
+      if (saved) setHiddenColumns(new Set(JSON.parse(saved) as string[]));
+    } catch {
+      // keep the defaults
+    }
+  }, []);
+
+  const toggleColumn = useCallback((key: SortableColumn) => {
+    setHiddenColumns((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      try {
+        localStorage.setItem(COLUMN_PREFS_KEY, JSON.stringify([...next]));
+      } catch {
+        // preference just will not persist
+      }
+      return next;
+    });
+  }, []);
+
+  const visibleColumns = useMemo(
+    () => COLUMNS.filter((c) => !hiddenColumns.has(c.key)),
+    [hiddenColumns]
+  );
+  const isVisible = useCallback(
+    (key: SortableColumn) => !hiddenColumns.has(key),
+    [hiddenColumns]
+  );
   const { filters, setFilter, applyFilters, clearFilters, applyFatePreset, fateActive } = useFilters();
   const { sortColumn, sortDirection, toggleSort, applySorting } = useSorting();
 
@@ -116,6 +155,39 @@ export default function PoolTable({ pools, hideFiltered }: PoolTableProps) {
           value={assetQuery}
           onChange={(e) => setAssetQuery(e.target.value)}
         />
+        <div className={`dropdown ${columnsOpen ? "is-active" : ""}`}>
+          <div className="dropdown-trigger">
+            <button
+              type="button"
+              className="button is-small"
+              onClick={() => setColumnsOpen((v) => !v)}
+              title="Choose which columns to show"
+            >
+              Columns
+              {hiddenColumns.size > 0 && (
+                <span className="tag is-light ml-2">{hiddenColumns.size} hidden</span>
+              )}
+            </button>
+          </div>
+          <div className="dropdown-menu" role="menu">
+            <div className="dropdown-content" style={{ maxHeight: "60vh", overflowY: "auto" }}>
+              {COLUMNS.map((col) => (
+                <label
+                  key={col.key}
+                  className="dropdown-item"
+                  style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer" }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={!hiddenColumns.has(col.key)}
+                    onChange={() => toggleColumn(col.key)}
+                  />
+                  {col.label}
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
         <label className="checkbox is-small">
           <input
             type="checkbox"
@@ -133,6 +205,7 @@ export default function PoolTable({ pools, hideFiltered }: PoolTableProps) {
         <table className="table is-fullwidth is-striped is-hoverable is-narrow">
           <thead>
             <TableHeader
+              columns={visibleColumns}
               sortColumn={sortColumn}
               sortDirection={sortDirection}
               onSort={toggleSort}
@@ -150,13 +223,14 @@ export default function PoolTable({ pools, hideFiltered }: PoolTableProps) {
                   pool={pool}
                   dimmed={dimmed}
                   selected={checkedIds.has(pool.id)}
+                  show={isVisible}
                   onSelect={handleSelect}
                 />
               );
             })}
             {rowsToRender.length === 0 && (
               <tr>
-                <td colSpan={16} className="has-text-centered">
+                <td colSpan={visibleColumns.length + 1} className="has-text-centered">
                   No pools match the current filters.
                   {fateActive && (
                     <div className="is-size-7 has-text-grey mt-1">

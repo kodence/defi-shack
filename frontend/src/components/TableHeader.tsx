@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { COLUMNS, SortableColumn } from "@/utils/constants";
+import { ColumnDef, SortableColumn } from "@/utils/constants";
 import ColumnFilterDropdown from "./ColumnFilterDropdown";
 
 interface TableHeaderProps {
+  columns: ColumnDef[];
   sortColumn: SortableColumn;
   sortDirection: "asc" | "desc";
   onSort: (column: SortableColumn) => void;
@@ -13,6 +14,7 @@ interface TableHeaderProps {
 }
 
 export default function TableHeader({
+  columns,
   sortColumn,
   sortDirection,
   onSort,
@@ -23,7 +25,7 @@ export default function TableHeader({
 
   return (
     <tr>
-      {COLUMNS.map((col) => {
+      {columns.map((col) => {
         const filter = filters[col.key];
         const hasActiveFilter =
           col.filterable && filter && (filter.min !== "" || filter.max !== "");
