@@ -31,6 +31,8 @@ export interface SimPoolInfo {
   poolType:         PoolType;
   invertible:       boolean;
   baseToken?:       0 | 1;
+  correlation7d?:   number;
+  correlation30d?:  number;
 }
 
 export type CalcMethod = "current" | "peak" | "average" | "custom";
@@ -52,6 +54,7 @@ export interface SimulationConfig {
   upperPrice:     number;
   investmentUsd:  number;
   days?:          number;
+  holdingDays?:   number;
 
   calcMethod?:      CalcMethod;
   customCalcPrice?: number;
@@ -176,6 +179,19 @@ export interface DivergenceResult {
   scenarios:   DivergenceScenario[];
 }
 
+export interface RangeGuard {
+  windowDays:       number;
+  historyDays:      number;
+  maxDailyUpPct:    number;
+  maxDailyDownPct:  number;
+  maxWindowUpPct:   number;
+  maxWindowDownPct: number;
+  rangeUpPct:       number;
+  rangeDownPct:     number;
+  coversUp:         boolean;
+  coversDown:       boolean;
+}
+
 export interface SimulationResult {
   pool:         SimPoolInfo;
   config:       SimulationConfig;
@@ -188,6 +204,7 @@ export interface SimulationResult {
   priceHistory: PriceCandle[];
   liquidity:    LiquidityDistribution | null;
   divergence:   DivergenceResult;
+  rangeGuard:   RangeGuard;
 }
 
 export interface LivePoolDefault {

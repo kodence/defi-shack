@@ -2,9 +2,9 @@ import {
   SimulationConfig, SimulationResult, PositionMetrics, AprBreakdown,
   ChartPoint, ScenarioRow, AprHistoryResult, DailyAprSample,
   LiquidityDistribution, DivergenceResult, DivergenceScenario, DlScenarioInput,
-  CalcMethod,
+  CalcMethod, RangeGuard,
 } from "./types";
-import { SimContext } from "./context";
+import { SimContext, clampMoveWindow } from "./context";
 import {
   getLiquidityFromInvestment, getPositionValueUsd, getAmounts,
   concentratedIL, capitalEfficiency, estimateTotalL, aprFromVolume,
@@ -250,10 +250,9 @@ export function buildDistribution(
 }
 
 // ── Divergence-loss simulation ────────────────────────────────────────────────
-const DL_HORIZON_DAYS = 7;
-
 export function buildDivergence(cfg: SimulationConfig, ctx: SimContext, m: PositionMetrics): DivergenceResult {
   const pool = ctx.pool;
+  const horizonDays = clampMoveWindow(cfg.holdingDays);
   const quoteUsd = pool.quoteUsd;
   const effBaseUsd = cfg.currentPrice * quoteUsd;  // pool-consistent base USD price
   const p0 = cfg.currentPrice;
@@ -273,8 +272,8 @@ export function buildDivergence(cfg: SimulationConfig, ctx: SimContext, m: Posit
     const recoveryDays = dl >= -1e-9 ? 0 : daily > 0 ? Math.abs(dl) / daily : -1;
     const verdict: DivergenceScenario["verdict"] =
       recoveryDays < 0 ? "slow" :
-      recoveryDays <= DL_HORIZON_DAYS ? "fast" :
-      recoveryDays <= DL_HORIZON_DAYS * 2 ? "ok" : "slow";
+      recoveryDays <= horizonDays ? "fast" :
+      recoveryDays <= horizonDays * 2 ? "ok" : "slow";
     return {
       label, source,
       basePct: b, quotePct: q,
@@ -321,7 +320,50 @@ export function buildDivergence(cfg: SimulationConfig, ctx: SimContext, m: Posit
     scenarios.push(compute(s, label, "standard"));
   }
 
-  return { poolType: pool.poolType, horizonDays: DL_HORIZON_DAYS, scenarios: scenarios.slice(0, 12) };
+  return { poolType: pool.poolType, horizonDays, scenarios: scenarios.slice(0, 12) };
+}
+
+// ── Range guard (RANGE framework: notable fluctuations) ───────────────────────
+// Would the chosen range have survived the biggest historical moves in the
+// analyzed window — both intraday spikes and holding-period-long trends?
+export function buildRangeGuard(cfg: SimulationConfig, ctx: SimContext): RangeGuard {
+  const candles = ctx.candles;
+  const windowDays = clampMoveWindow(cfg.holdingDays);
+
+  let maxDailyUp = 0, maxDailyDown = 0;
+  for (const c of candles) {
+    if (c.open > 0) {
+      maxDailyUp = Math.max(maxDailyUp, c.high / c.open - 1);
+      maxDailyDown = Math.min(maxDailyDown, c.low / c.open - 1);
+    }
+  }
+
+  let maxWindowUp = 0, maxWindowDown = 0;
+  for (let i = 0; i + windowDays < candles.length; i++) {
+    const a = candles[i].close, b = candles[i + windowDays].close;
+    if (a > 0) {
+      maxWindowUp = Math.max(maxWindowUp, b / a - 1);
+      maxWindowDown = Math.min(maxWindowDown, b / a - 1);
+    }
+  }
+
+  const rangeUp = cfg.currentPrice > 0 ? cfg.upperPrice / cfg.currentPrice - 1 : 0;
+  const rangeDown = cfg.currentPrice > 0 ? cfg.lowerPrice / cfg.currentPrice - 1 : 0;
+  const worstUp = Math.max(maxDailyUp, maxWindowUp);
+  const worstDown = Math.min(maxDailyDown, maxWindowDown);
+
+  return {
+    windowDays,
+    historyDays: candles.length,
+    maxDailyUpPct: maxDailyUp,
+    maxDailyDownPct: maxDailyDown,
+    maxWindowUpPct: maxWindowUp,
+    maxWindowDownPct: maxWindowDown,
+    rangeUpPct: rangeUp,
+    rangeDownPct: rangeDown,
+    coversUp: rangeUp >= worstUp,
+    coversDown: rangeDown <= worstDown,
+  };
 }
 
 // ── Full simulation ───────────────────────────────────────────────────────────
@@ -339,5 +381,6 @@ export function runSimulation(cfg: SimulationConfig, ctx: SimContext): Simulatio
     priceHistory: ctx.candles,
     liquidity: buildDistribution(cfg, ctx, calcPrice),
     divergence: buildDivergence(cfg, ctx, metrics),
+    rangeGuard: buildRangeGuard(cfg, ctx),
   };
 }

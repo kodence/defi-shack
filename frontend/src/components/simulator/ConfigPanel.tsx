@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { AprBreakdown, CalcMethod, PoolPreset, SimPoolInfo, SimulationConfig } from "@/types/simulator";
+import { AprBreakdown, CalcMethod, PoolPreset, RangeGuard, SimPoolInfo, SimulationConfig } from "@/types/simulator";
 import { fmtVolShort, fmtUsd } from "@/lib/api";
 import styles from "./ConfigPanel.module.css";
 
@@ -10,6 +10,7 @@ interface Props {
   activePreset:  PoolPreset | null;
   pool:          SimPoolInfo | null;
   aprBreakdown:  AprBreakdown | null;
+  rangeGuard:    RangeGuard | null;
   basePct:       number;
   baseAmount:    number;
   quoteAmount:   number;
@@ -19,6 +20,28 @@ interface Props {
   onChange:       (patch: Partial<SimulationConfig>) => void;
   onInvert:       () => void;
 }
+
+// Solve range bounds for a target base-token value fraction, keeping the
+// upper/lower price ratio fixed (RANGE framework "asset exposure" step).
+// Derivation: with s=√P, sa=√Pa, sb=sa·k (k=√ratio), the base value fraction
+// f = (s − s²/sb) / (2s − s²/sb − sa) reduces to f·sa² − (2f−1)·s·sa − (1−f)·s²/k = 0.
+function solveRangeForExposure(
+  f: number, price: number, ratio: number,
+): { lower: number; upper: number } | null {
+  if (!(price > 0) || !(ratio > 1.000001)) return null;
+  const s = Math.sqrt(price);
+  const k = Math.sqrt(ratio);
+  const fc = Math.min(Math.max(f, 0.02), 0.98);
+  const b = 2 * fc - 1;
+  const sa = s * (b + Math.sqrt(b * b + 4 * fc * (1 - fc) / k)) / (2 * fc);
+  if (!(sa > 0)) return null;
+  const lower = sa * sa;
+  const upper = lower * ratio;
+  if (!(lower < price && price < upper)) return null;
+  return { lower, upper };
+}
+
+const pctSigned = (v: number) => `${v >= 0 ? "+" : ""}${(v * 100).toFixed(1)}%`;
 
 const RANGE_PRESETS: [string, number][] = [
   ["±0.5%", 0.005], ["±1%", 0.01], ["±5%", 0.05],
@@ -33,7 +56,7 @@ const CALC_METHODS: { key: CalcMethod; label: string; hint: string }[] = [
 ];
 
 export default function ConfigPanel({
-  presets, cfg, activePreset, pool, aprBreakdown,
+  presets, cfg, activePreset, pool, aprBreakdown, rangeGuard,
   basePct, baseAmount, quoteAmount, baseValueUsd, quoteValueUsd,
   onPresetSelect, onChange, onInvert,
 }: Props) {
@@ -48,6 +71,18 @@ export default function ConfigPanel({
 
   function setRangePct(pct: number) {
     onChange({ lowerPrice: cfg.currentPrice * (1 - pct), upperPrice: cfg.currentPrice * (1 + pct) });
+  }
+
+  function setHoldingDays(h: number) {
+    const holding = Math.min(Math.max(Math.round(h), 1), 90);
+    // RANGE guideline: analyze 2× the intended holding period
+    onChange({ holdingDays: holding, days: Math.min(Math.max(holding * 2, 7), 365) });
+  }
+
+  function setExposure(targetBasePct: number) {
+    const ratio = cfg.lowerPrice > 0 ? cfg.upperPrice / cfg.lowerPrice : 0;
+    const solved = solveRangeForExposure(targetBasePct / 100, cfg.currentPrice, ratio);
+    if (solved) onChange({ lowerPrice: solved.lower, upperPrice: solved.upper });
   }
 
   const t0s = baseAmount < 0.001 ? baseAmount.toFixed(6) : baseAmount.toFixed(4);
@@ -197,6 +232,20 @@ export default function ConfigPanel({
       {/* Range */}
       <div>
         <div className={styles.slbl} style={{ marginBottom: "8px" }}>Price range</div>
+
+        <div className={styles.fgrid2} style={{ marginBottom: "9px" }}>
+          <label className={styles.fg}>
+            <span className={styles.fl}>Holding period (days)</span>
+            <input className={styles.fi} type="number" min="1" max="90" step="1"
+              value={cfg.holdingDays ?? 7}
+              onChange={e => setHoldingDays(+e.target.value)} />
+          </label>
+          <div className={styles.fg}>
+            <span className={styles.fl}>Calc window (2×)</span>
+            <div className={styles.calcWindow}>{cfg.days ?? 90}d of data</div>
+          </div>
+        </div>
+
         <div className={styles.rangeRow}>
           {RANGE_PRESETS.map(([lbl, pct]) => {
             const half   = (cfg.upperPrice - cfg.lowerPrice) / 2;
@@ -226,6 +275,28 @@ export default function ConfigPanel({
           Range width: <span style={{ color: "var(--amber)" }}>±{rangePct}%</span>
           &nbsp;·&nbsp;{cfg.lowerPrice.toPrecision(6)} – {cfg.upperPrice.toPrecision(6)}
         </div>
+
+        {/* Notable-fluctuation guard */}
+        {rangeGuard && (
+          <div className={styles.guard}>
+            <div className={styles.guardTitle}>
+              Range guard · biggest moves in {rangeGuard.historyDays}d
+            </div>
+            <div className={rangeGuard.coversUp ? styles.guardOk : styles.guardWarn}>
+              {rangeGuard.coversUp ? "✓" : "⚠"} Up: {pctSigned(Math.max(rangeGuard.maxWindowUpPct, rangeGuard.maxDailyUpPct))}
+              {" seen"} · range {pctSigned(rangeGuard.rangeUpPct)}
+            </div>
+            <div className={rangeGuard.coversDown ? styles.guardOk : styles.guardWarn}>
+              {rangeGuard.coversDown ? "✓" : "⚠"} Down: {pctSigned(Math.min(rangeGuard.maxWindowDownPct, rangeGuard.maxDailyDownPct))}
+              {" seen"} · range {pctSigned(rangeGuard.rangeDownPct)}
+            </div>
+            {(!rangeGuard.coversUp || !rangeGuard.coversDown) && (
+              <div className={styles.guardNote}>
+                A repeat of the biggest {rangeGuard.windowDays}d move would push this range out.
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <div className={styles.divider} />
@@ -251,6 +322,18 @@ export default function ConfigPanel({
             <div className={styles.splitLbl}>
               <span>{baseSym} {p0}%</span>
               <span>{quoteSym} {p1}%</span>
+            </div>
+
+            {/* Exposure targeting: shift the range (same width) to hit a ratio */}
+            <input
+              className={styles.exposure}
+              type="range" min="10" max="90" step="5"
+              value={Math.min(Math.max(Math.round(basePct * 100 / 5) * 5, 10), 90)}
+              title={`Target ${baseSym} exposure — shifts the range, keeping its width`}
+              onChange={e => setExposure(+e.target.value)}
+            />
+            <div className={styles.exposureLbl}>
+              Target exposure · 50/50 neutral → 80/20 bullish {baseSym}
             </div>
             <div className={styles.splitAmounts}>
               <span>{t0s} {baseSym}

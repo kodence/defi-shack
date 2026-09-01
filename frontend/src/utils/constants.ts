@@ -11,6 +11,8 @@ export type SortableColumn =
   | "apr"
   | "avgDailyFees"
   | "avgDailyVolume"
+  | "feeToTvlPct"
+  | "volumeCV"
   | "correlation"
   | "priceVolatility";
 
@@ -28,9 +30,23 @@ export const COLUMNS: ColumnDef[] = [
   { key: "apr", label: "Avg APR", filterable: true },
   { key: "avgDailyFees", label: "Avg Daily Fees", filterable: true },
   { key: "avgDailyVolume", label: "Avg Daily Volume", filterable: true },
+  { key: "feeToTvlPct", label: "Fee/TVL", filterable: true },
+  { key: "volumeCV", label: "Vol CV", filterable: true },
   { key: "correlation", label: "Correlation", filterable: true },
   { key: "priceVolatility", label: "Price Volatility", filterable: true },
 ];
+
+// FATE framework thresholds: APR 30–500%, TVL ≥ $1M, volatility < 15%.
+// Correlation is deliberately NOT auto-filtered (the doc's flow checks it
+// manually) — a stable-quoted pool reports 0 and would always be excluded.
+export const FATE_FILTERS: Record<string, { min: string; max: string }> = {
+  apr: { min: "30", max: "500" },
+  tvl: { min: "1000000", max: "" },
+  priceVolatility: { min: "", max: "15" },
+};
+
+// Fee-to-TVL ratio considered "actively traded" by the FATE guidance
+export const FEE_TO_TVL_TARGET = 0.059;
 
 export const TIMEFRAMES = [7, 30, 90] as const;
 

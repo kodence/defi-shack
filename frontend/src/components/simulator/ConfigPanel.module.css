@@ -68,3 +68,18 @@
 .splitFill { height: 100%; background: linear-gradient(90deg, var(--blue), var(--green)); border-radius: 3px; transition: width .3s ease; }
 .splitLbl { display: flex; justify-content: space-between; margin-top: 3px; font-size: 10px; color: var(--tm); }
 .splitAmounts { display: flex; justify-content: space-between; font-size: 10px; color: var(--tm); margin-top: 4px; gap: 4px; flex-wrap: wrap; }
+.calcWindow {
+  padding: 7px 9px; border: 1px dashed var(--border); border-radius: 6px;
+  font-size: 12px; color: var(--ts); background: var(--bg-card);
+}
+.guard {
+  margin-top: 10px; padding: 8px 10px; border-radius: 8px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 3px;
+}
+.guardTitle { font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--tm); margin-bottom: 2px; }
+.guardOk   { font-size: 10px; color: var(--green); }
+.guardWarn { font-size: 10px; color: var(--amber); font-weight: 600; }
+.guardNote { font-size: 9px; color: var(--tm); margin-top: 2px; line-height: 1.4; }
+.exposure { width: 100%; margin-top: 10px; accent-color: var(--blue); cursor: pointer; }
+.exposureLbl { font-size: 9px; color: var(--tm); margin-top: 2px; }

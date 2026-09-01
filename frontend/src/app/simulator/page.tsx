@@ -10,6 +10,7 @@ import ScenarioTable   from "@/components/simulator/ScenarioTable";
 import PriceChart      from "@/components/simulator/PriceChart";
 import LiquidityChart  from "@/components/simulator/LiquidityChart";
 import DivergencePanel from "@/components/simulator/DivergencePanel";
+import ValidChecklist  from "@/components/simulator/ValidChecklist";
 import Toast, { useToast } from "@/components/simulator/Toast";
 import styles from "./page.module.css";
 
@@ -166,6 +167,7 @@ function SimulatorInner() {
             activePreset={preset}
             pool={pool}
             aprBreakdown={result?.aprBreakdown ?? null}
+            rangeGuard={result?.rangeGuard ?? null}
             basePct={m?.basePct ?? 0.5}
             baseAmount={m?.baseAmount ?? 0}
             quoteAmount={m?.quoteAmount ?? 0}
@@ -207,6 +209,7 @@ function SimulatorInner() {
                     cfg={cfg}
                     onChange={handleChange}
                   />
+                  <ValidChecklist result={result} cfg={cfg} />
                 </div>
               </div>
             </>

@@ -84,6 +84,36 @@ export function computeCorrelation(
   return sumXY / denominator;
 }
 
+// Daily fee-to-TVL ratio in % — FATE guidance targets ~0.059%+ for actively traded pools
+export function computeFeeToTvl(avgDailyFees: number, avgDailyTVL: number): number {
+  if (avgDailyTVL === 0) return 0;
+  return (avgDailyFees / avgDailyTVL) * 100;
+}
+
+// Coefficient of variation of daily volume (stddev / mean) — lower = more
+// consistent volume (VALID "APR and Volume Consistency" check)
+export function computeVolumeCV(dayDatas: SubgraphPoolDayData[]): number {
+  const vols = dayDatas.map((d) => parseFloat(d.volumeUSD)).filter((v) => v >= 0);
+  if (vols.length < 2) return 0;
+  const avg = mean(vols);
+  if (avg === 0) return 0;
+  const variance = vols.reduce((s, v) => s + (v - avg) ** 2, 0) / (vols.length - 1);
+  return Math.sqrt(variance) / avg;
+}
+
+// Pearson correlation restricted to the last `days` days of both series
+export function computeCorrelationWindow(
+  token0Prices: SubgraphTokenDayData[],
+  token1Prices: SubgraphTokenDayData[],
+  days: number
+): number {
+  const cutoff = Math.floor(Date.now() / 1000) - days * 86_400;
+  return computeCorrelation(
+    token0Prices.filter((d) => d.date >= cutoff),
+    token1Prices.filter((d) => d.date >= cutoff)
+  );
+}
+
 // Determine which token to use for volatility calculation
 export function getVolatilityTokenId(
   token0: { id: string; symbol: string },

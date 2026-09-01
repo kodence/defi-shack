@@ -101,6 +101,21 @@ export function aprFromVolume(
   return (vol24h * (feeTier / 1e6) * (Lpos / (Ltotal + Lpos)) / posVal) * 365;
 }
 
+// ── Pearson correlation of two aligned series ─────────────────────────────────
+export function pearson(x: number[], y: number[]): number {
+  const n = Math.min(x.length, y.length);
+  if (n < 2) return 0;
+  const mx = x.slice(0, n).reduce((s, v) => s + v, 0) / n;
+  const my = y.slice(0, n).reduce((s, v) => s + v, 0) / n;
+  let sxy = 0, sx2 = 0, sy2 = 0;
+  for (let i = 0; i < n; i++) {
+    const dx = x[i] - mx, dy = y[i] - my;
+    sxy += dx * dy; sx2 += dx * dx; sy2 += dy * dy;
+  }
+  const denom = Math.sqrt(sx2 * sy2);
+  return denom > 0 ? sxy / denom : 0;
+}
+
 // ── Annualized volatility from daily closes (stddev of log returns) ───────────
 export function annualizedVolFromCloses(closes: number[], fallback = 0.8): number {
   const rets: number[] = [];

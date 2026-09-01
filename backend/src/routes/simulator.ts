@@ -13,7 +13,11 @@ const router = Router();
 const POOL_ID_RE = /^0x[0-9a-fA-F]{40}$/;
 const CALC_METHODS: CalcMethod[] = ["current", "peak", "average", "custom"];
 const VOLUME_WINDOWS = [7, 21, 30];
-const DAY_OPTIONS = [7, 30, 90, 365];
+
+const clampInt = (v: unknown, lo: number, hi: number, fallback: number): number => {
+  const n = Math.round(Number(v));
+  return Number.isFinite(n) ? Math.min(Math.max(n, lo), hi) : fallback;
+};
 
 // GET /api/simulator/presets
 router.get("/presets", (_req: Request, res: Response) => {
@@ -121,7 +125,8 @@ router.post("/simulate", async (req: Request, res: Response) => {
     lowerPrice:     body.lowerPrice,
     upperPrice:     body.upperPrice,
     investmentUsd:  body.investmentUsd,
-    days:           DAY_OPTIONS.includes(Number(body.days)) ? Number(body.days) : 90,
+    days:           clampInt(body.days, 2, 365, 90),
+    holdingDays:    body.holdingDays !== undefined ? clampInt(body.holdingDays, 1, 90, 7) : undefined,
     calcMethod:     CALC_METHODS.includes(body.calcMethod as CalcMethod)
                       ? (body.calcMethod as CalcMethod) : "current",
     customCalcPrice: typeof body.customCalcPrice === "number" && body.customCalcPrice > 0

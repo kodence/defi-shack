@@ -33,6 +33,8 @@ export interface SimPoolInfo {
   poolType:         PoolType;
   invertible:       boolean;         // live pools support base/quote toggle
   baseToken?:       0 | 1;           // live: which subgraph token is the base
+  correlation7d?:   number;          // live: Pearson of token USD prices, last 7d
+  correlation30d?:  number;          // live: last 30d
 }
 
 // ── Simulation config (user inputs) ──────────────────────────────────────────
@@ -56,6 +58,8 @@ export interface SimulationConfig {
   upperPrice:     number;
   investmentUsd:  number;
   days?:          number;
+  holdingDays?:   number;         // intended holding period; drives the RANGE
+                                  // guard window and the DL recovery horizon
 
   // Realistic APR (live pools)
   calcMethod?:      CalcMethod;   // default "current"
@@ -166,6 +170,20 @@ export interface LiquidityDistribution {
   clipped:      boolean;            // tick window hit the page cap
 }
 
+// ── Range guard (RANGE framework: notable fluctuations) ───────────────────────
+export interface RangeGuard {
+  windowDays:       number;   // holding-period move window analyzed
+  historyDays:      number;   // candles the extremes were measured over
+  maxDailyUpPct:    number;   // biggest intraday spike vs open
+  maxDailyDownPct:  number;   // biggest intraday drop vs open (≤ 0)
+  maxWindowUpPct:   number;   // biggest close-to-close rise over windowDays
+  maxWindowDownPct: number;   // biggest close-to-close fall over windowDays (≤ 0)
+  rangeUpPct:       number;   // upper bound distance from current price
+  rangeDownPct:     number;   // lower bound distance from current price (≤ 0)
+  coversUp:         boolean;  // range would have survived the biggest rise
+  coversDown:       boolean;  // range would have survived the biggest fall
+}
+
 // ── Divergence-loss simulation ────────────────────────────────────────────────
 export interface DivergenceScenario {
   label:             string;
@@ -201,4 +219,5 @@ export interface SimulationResult {
   priceHistory: PriceCandle[];
   liquidity:    LiquidityDistribution | null;  // null in preset mode
   divergence:   DivergenceResult;
+  rangeGuard:   RangeGuard;
 }

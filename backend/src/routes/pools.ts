@@ -13,6 +13,9 @@ import {
   computeAPR,
   computeVolatility,
   computeCorrelation,
+  computeFeeToTvl,
+  computeVolumeCV,
+  computeCorrelationWindow,
   getVolatilityTokenId,
 } from "../services/metrics";
 import { ComputedPool, ApiResponse } from "../types/pool";
@@ -77,6 +80,8 @@ async function fetchPoolsForNetwork(
     const token0Prices = tokenDayDatasMap.get(pool.token0.id) || [];
     const token1Prices = tokenDayDatasMap.get(pool.token1.id) || [];
     const correlation = computeCorrelation(token0Prices, token1Prices);
+    const correlation7d = computeCorrelationWindow(token0Prices, token1Prices, 7);
+    const correlation30d = computeCorrelationWindow(token0Prices, token1Prices, Math.min(30, timeframe));
 
     const feeTierStr = formatFeeTier(pool.feeTier);
 
@@ -95,6 +100,10 @@ async function fetchPoolsForNetwork(
       avgDailyVolume,
       priceVolatility,
       correlation,
+      feeToTvlPct: computeFeeToTvl(avgDailyFees, avgDailyTVL),
+      volumeCV: computeVolumeCV(dayDatas),
+      correlation7d,
+      correlation30d,
     };
   });
 }

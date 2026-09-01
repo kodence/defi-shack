@@ -18,8 +18,25 @@ export default function PoolTable({ pools, hideFiltered }: PoolTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
   const [showOnlyChecked, setShowOnlyChecked] = useState(false);
-  const { filters, setFilter, applyFilters } = useFilters();
+  const [assetQuery, setAssetQuery] = useState("");
+  const { filters, setFilter, applyFilters, clearFilters, applyFatePreset, fateActive } = useFilters();
   const { sortColumn, sortDirection, toggleSort, applySorting } = useSorting();
+
+  // FATE "Fundamentals": restrict to pools containing the given asset symbols
+  const assetPools = useMemo(() => {
+    const terms = assetQuery
+      .split(/[\s,]+/)
+      .map((t) => t.trim().toUpperCase())
+      .filter(Boolean);
+    if (!terms.length) return pools;
+    return pools.filter((p) =>
+      terms.some(
+        (t) =>
+          p.token0.symbol.toUpperCase().includes(t) ||
+          p.token1.symbol.toUpperCase().includes(t)
+      )
+    );
+  }, [pools, assetQuery]);
 
   const handleSelect = useCallback((poolId: string) => {
     setCheckedIds((prev) => {
@@ -34,8 +51,8 @@ export default function PoolTable({ pools, hideFiltered }: PoolTableProps) {
   }, []);
 
   const filteredPools = useMemo(() => {
-    return applyFilters(pools);
-  }, [pools, applyFilters]);
+    return applyFilters(assetPools);
+  }, [assetPools, applyFilters]);
 
   const sortedPools = useMemo(() => {
     return applySorting(filteredPools);
@@ -51,8 +68,8 @@ export default function PoolTable({ pools, hideFiltered }: PoolTableProps) {
   }, [filteredPools]);
 
   const allSorted = useMemo(() => {
-    return applySorting(pools).slice(0, MAX_DISPLAY_ROWS);
-  }, [pools, applySorting]);
+    return applySorting(assetPools).slice(0, MAX_DISPLAY_ROWS);
+  }, [assetPools, applySorting]);
 
   const showAll = !hideFiltered;
   const basePools = showAll ? allSorted : displayPools;
@@ -80,7 +97,25 @@ export default function PoolTable({ pools, hideFiltered }: PoolTableProps) {
 
   return (
     <div>
-      <div className="is-flex is-align-items-center mb-3" style={{ gap: "1rem" }}>
+      <div className="is-flex is-align-items-center is-flex-wrap-wrap mb-3" style={{ gap: "1rem" }}>
+        <button
+          className={`button is-small ${fateActive ? "is-primary" : "is-primary is-outlined"}`}
+          title="Apply FATE framework filters: APR 30–500%, TVL ≥ $1M, volatility < 15%, correlation ≥ 0.5"
+          onClick={applyFatePreset}
+        >
+          FATE filters{fateActive ? " ✓" : ""}
+        </button>
+        <button className="button is-small is-light" onClick={clearFilters}>
+          Reset filters
+        </button>
+        <input
+          className="input is-small"
+          style={{ maxWidth: "230px" }}
+          type="text"
+          placeholder="Filter by asset (e.g. ETH, LINK)"
+          value={assetQuery}
+          onChange={(e) => setAssetQuery(e.target.value)}
+        />
         <label className="checkbox is-small">
           <input
             type="checkbox"
@@ -121,8 +156,15 @@ export default function PoolTable({ pools, hideFiltered }: PoolTableProps) {
             })}
             {rowsToRender.length === 0 && (
               <tr>
-                <td colSpan={10} className="has-text-centered">
+                <td colSpan={12} className="has-text-centered">
                   No pools match the current filters.
+                  {fateActive && (
+                    <div className="is-size-7 has-text-grey mt-1">
+                      FATE thresholds (APR 30–500%, TVL ≥ $1M, volatility &lt; 15%) are strict by
+                      design — try more networks, or relax a bound via the column filters
+                      (volatility is often the binding one in volatile weeks).
+                    </div>
+                  )}
                 </td>
               </tr>
             )}

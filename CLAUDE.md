@@ -69,7 +69,8 @@ Backend `ComputedPool` (`backend/src/types/pool.ts`) ↔ frontend `Pool` (`front
 
 ## Key Domain Rules
 
-- **Metric definitions are frozen for V1** — changing them breaks V2 simulation inputs
+- **Metric definitions are frozen for V1** — changing them breaks V2 simulation inputs. Newer metrics (`feeToTvlPct`, `volumeCV`, `correlation7d/30d`) are additive fields computed alongside, never redefinitions.
+- **FATE filter preset** (`FATE_FILTERS` in `frontend/src/utils/constants.ts`): APR 30–500%, TVL ≥ $1M, volatility < 15%. Correlation is intentionally not auto-filtered — stable-quoted pools report correlation 0 (constant stablecoin price) and would always be excluded.
 - **Volatility token selection:** if either token is a known stablecoin, use the other token's price; if neither, use token0
 - **Stablecoins:** USDC, USDT, DAI, FRAX, LUSD, crvUSD
 - **APR formula:** `(avgDailyFees / avgDailyTVL) * 365 * 100` — fee APR only, excludes IL

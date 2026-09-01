@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { Pool } from "@/types/pool";
-import { SortableColumn, COLUMNS } from "@/utils/constants";
+import { SortableColumn, COLUMNS, FATE_FILTERS } from "@/utils/constants";
 
 type FilterValues = Record<string, { min: string; max: string }>;
 
@@ -11,6 +11,8 @@ interface UseFiltersReturn {
   setFilter: (key: string, bound: "min" | "max", value: string) => void;
   applyFilters: (pools: Pool[]) => Pool[];
   clearFilters: () => void;
+  applyFatePreset: () => void;
+  fateActive: boolean;
 }
 
 const DEFAULT_MINS: Record<string, string> = {
@@ -44,6 +46,23 @@ export function useFilters(): UseFiltersReturn {
     setFilters(initFilters());
   };
 
+  // One-click FATE framework filter set (APR band, TVL floor, volatility cap,
+  // correlation floor); other filters are left untouched.
+  const applyFatePreset = () => {
+    setFilters((prev) => {
+      const next = { ...prev };
+      for (const [key, bounds] of Object.entries(FATE_FILTERS)) {
+        next[key] = { ...bounds };
+      }
+      return next;
+    });
+  };
+
+  const fateActive = Object.entries(FATE_FILTERS).every(
+    ([key, bounds]) =>
+      filters[key]?.min === bounds.min && filters[key]?.max === bounds.max
+  );
+
   const applyFilters = useMemo(() => {
     return (pools: Pool[]) => {
       return pools.filter((pool) => {
@@ -57,5 +76,5 @@ export function useFilters(): UseFiltersReturn {
     };
   }, [filters]);
 
-  return { filters, setFilter, applyFilters, clearFilters };
+  return { filters, setFilter, applyFilters, clearFilters, applyFatePreset, fateActive };
 }

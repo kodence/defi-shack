@@ -13,6 +13,10 @@ export interface Pool {
   avgDailyVolume: number;
   priceVolatility: number;
   correlation: number;
+  feeToTvlPct: number;
+  volumeCV: number;
+  correlation7d: number;
+  correlation30d: number;
 }
 
 export interface PoolsApiResponse {

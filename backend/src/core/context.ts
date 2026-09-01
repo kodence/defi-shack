@@ -1,7 +1,7 @@
 import { STABLECOINS } from "../constants";
-import { LivePoolSnapshot } from "../services/poolSnapshot";
+import { LivePoolSnapshot, TokenPriceDay } from "../services/poolSnapshot";
 import { LiquidityCurve } from "./liquidity";
-import { annualizedVolFromCloses, tickToAdjPrice } from "./math";
+import { annualizedVolFromCloses, pearson, tickToAdjPrice } from "./math";
 import {
   PoolPreset, PoolType, PriceCandle, SimPoolInfo, SimulationConfig, TvlDayData,
 } from "./types";
@@ -181,6 +181,7 @@ export function buildLiveContext(cfg: SimulationConfig, snap: LivePoolSnapshot):
 
   const window = cfg.volumeWindow ?? 30;
   const volume = volumeStats(snap.dayDatas, window, cfg.trimSpikes ?? true);
+  const moveWindow = clampMoveWindow(cfg.holdingDays);
 
   const pool: SimPoolInfo = {
     source: "live",
@@ -199,6 +200,8 @@ export function buildLiveContext(cfg: SimulationConfig, snap: LivePoolSnapshot):
     poolType: poolTypeOf(base.symbol, quote.symbol),
     invertible: true,
     baseToken,
+    correlation7d: correlationWindow(snap.token0Days, snap.token1Days, 7),
+    correlation30d: correlationWindow(snap.token0Days, snap.token1Days, 30),
   };
 
   return {
@@ -210,12 +213,30 @@ export function buildLiveContext(cfg: SimulationConfig, snap: LivePoolSnapshot):
     curve,
     ticksClipped: snap.ticksClipped,
     volume,
-    histMoves: historicalMoves(snap, baseToken),
+    histMoves: historicalMoves(snap, baseToken, moveWindow),
     livePriceO: priceO,
   };
 }
 
 const inv = (v: number) => (v > 0 ? 1 / v : 0);
+
+export function clampMoveWindow(holdingDays?: number): number {
+  return Math.min(Math.max(Math.round(holdingDays ?? 7), 1), 30);
+}
+
+// Pearson correlation of the two tokens' daily USD prices over the last N days
+function correlationWindow(t0: TokenPriceDay[], t1: TokenPriceDay[], days: number): number {
+  const cutoff = Math.floor(Date.now() / 1000) - days * 86_400;
+  const map1 = new Map(t1.filter(d => d.date >= cutoff).map(d => [d.date, d.priceUsd]));
+  const x: number[] = [], y: number[] = [];
+  for (const d of t0) {
+    if (d.date < cutoff) continue;
+    const q = map1.get(d.date);
+    if (q === undefined) continue;
+    x.push(d.priceUsd); y.push(q);
+  }
+  return pearson(x, y);
+}
 
 // Average daily volume over the last `window` complete days, optionally
 // excluding spike days (> 3× median) per the "cut unrealistic spikes" guidance.
@@ -251,15 +272,13 @@ function volumeStats(
   };
 }
 
-// Largest joint 7-day USD moves of the two tokens (both measured over the SAME
+// Largest joint N-day USD moves of the two tokens (both measured over the SAME
 // dates, so each scenario is a move that actually happened).
-const MOVE_WINDOW_DAYS = 7;
-
-function historicalMoves(snap: LivePoolSnapshot, baseToken: 0 | 1): HistMove[] {
+function historicalMoves(snap: LivePoolSnapshot, baseToken: 0 | 1, windowDays: number): HistMove[] {
   const baseDays = baseToken === 0 ? snap.token0Days : snap.token1Days;
   const quoteDays = baseToken === 0 ? snap.token1Days : snap.token0Days;
   const qMap = new Map(quoteDays.map(d => [d.date, d.priceUsd]));
-  const span = MOVE_WINDOW_DAYS * 86_400;
+  const span = windowDays * 86_400;
 
   interface Joint { basePct: number; quotePct: number; date: number }
   const joints: Joint[] = [];
@@ -291,7 +310,7 @@ function historicalMoves(snap: LivePoolSnapshot, baseToken: 0 | 1): HistMove[] {
     out.push({
       basePct: j.basePct,
       quotePct: j.quotePct,
-      label: `Hist. ${MOVE_WINDOW_DAYS}d ${tag}`,
+      label: `Hist. ${windowDays}d ${tag}`,
     });
   }
   return out;

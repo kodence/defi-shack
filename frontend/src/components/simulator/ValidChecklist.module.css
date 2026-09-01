@@ -1,0 +1,29 @@
+.card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; }
+.title { font-size: 12px; font-weight: 600; color: var(--ts); margin-bottom: 10px; display: flex; align-items: center; gap: 7px; }
+.pill  { font-size: 10px; padding: 1px 7px; border-radius: 10px; background: var(--bg-elevated); border: 1px solid var(--border); color: var(--tm); font-weight: 500; }
+
+.list { display: flex; flex-direction: column; }
+.row {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 6px 0; border-bottom: 1px solid var(--border-light);
+}
+.row:last-child { border-bottom: none; }
+
+.icon {
+  width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; margin-top: 1px;
+}
+.pass { background: rgba(63,185,80,.15); color: var(--green); border: 1px solid rgba(63,185,80,.35); }
+.warn { background: rgba(227,179,65,.15); color: var(--amber); border: 1px solid rgba(227,179,65,.35); }
+.fail { background: rgba(248,81,73,.12); color: var(--red); border: 1px solid rgba(248,81,73,.35); }
+.na   { background: var(--bg-elevated); color: var(--tm); border: 1px solid var(--border); }
+
+.chk { width: 16px; height: 16px; margin-top: 1px; flex-shrink: 0; accent-color: var(--green); cursor: pointer; }
+
+.letter {
+  width: 14px; flex-shrink: 0; font-size: 10px; font-weight: 700;
+  color: var(--tm); margin-top: 2px;
+}
+.lbl { font-size: 11px; font-weight: 500; color: var(--tx); display: flex; flex-direction: column; gap: 1px; }
+.detail { font-size: 9px; font-weight: 400; color: var(--tm); line-height: 1.4; }
