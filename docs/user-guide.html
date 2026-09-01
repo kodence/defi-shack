@@ -1,0 +1,1269 @@
+<title>LPSim Field Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+  /* ---- Tokens: complete light palette on bare :root ---- */
+  :root {
+    --bg:          #f6f7f9;
+    --surface:     #ffffff;
+    --surface-2:   #eef1f5;
+    --ink:         #111721;
+    --ink-2:       #4a5563;
+    --ink-3:       #6b7684;
+    --line:        #dfe4ea;
+    --line-strong: #c6cdd6;
+    --accent:      #1f6feb;
+    --accent-soft: #e3edfd;
+    --good:        #1a7f37;
+    --good-soft:   #ddf5e3;
+    --warn:        #9a6700;
+    --warn-soft:   #fdf3cd;
+    --bad:         #cf222e;
+    --bad-soft:    #ffe9e7;
+    --info:        #6639ba;
+    --info-soft:   #eee5fb;
+    --shadow:      0 1px 2px rgba(17, 23, 33, .06), 0 8px 24px rgba(17, 23, 33, .05);
+
+    --f-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+    --f-body:    "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+    --f-mono:    "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  }
+
+  /* System-dark (nothing stamped) &mdash; explicit light choice still wins */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:          #0d1117;
+      --surface:     #161b22;
+      --surface-2:   #1c232c;
+      --ink:         #e6edf3;
+      --ink-2:       #b1bac4;
+      --ink-3:       #8b949e;
+      --line:        #262d36;
+      --line-strong: #3a444f;
+      --accent:      #58a6ff;
+      --accent-soft: #10243e;
+      --good:        #3fb950;
+      --good-soft:   #10291a;
+      --warn:        #e3b341;
+      --warn-soft:   #2a2210;
+      --bad:         #f85149;
+      --bad-soft:    #341a19;
+      --info:        #a371f7;
+      --info-soft:   #241a38;
+      --shadow:      0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .3);
+    }
+  }
+  /* Explicit dark choice wins over a light OS */
+  :root[data-theme="dark"] {
+    --bg:          #0d1117;
+    --surface:     #161b22;
+    --surface-2:   #1c232c;
+    --ink:         #e6edf3;
+    --ink-2:       #b1bac4;
+    --ink-3:       #8b949e;
+    --line:        #262d36;
+    --line-strong: #3a444f;
+    --accent:      #58a6ff;
+    --accent-soft: #10243e;
+    --good:        #3fb950;
+    --good-soft:   #10291a;
+    --warn:        #e3b341;
+    --warn-soft:   #2a2210;
+    --bad:         #f85149;
+    --bad-soft:    #341a19;
+    --info:        #a371f7;
+    --info-soft:   #241a38;
+    --shadow:      0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .3);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--f-body);
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---- Shell ---- */
+  .wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 28px 96px;
+  }
+  .cols {
+    display: grid;
+    grid-template-columns: 232px minmax(0, 1fr);
+    gap: 56px;
+    align-items: start;
+  }
+  main { max-width: 74ch; min-width: 0; }
+
+  /* ---- Masthead ---- */
+  header.top {
+    padding: 72px 0 40px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 48px;
+  }
+  .eyebrow {
+    font-family: var(--f-mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 18px;
+  }
+  h1 {
+    font-family: var(--f-display);
+    font-weight: 700;
+    font-size: clamp(38px, 6vw, 60px);
+    line-height: 1.02;
+    letter-spacing: -.03em;
+    margin: 0 0 20px;
+    text-wrap: balance;
+  }
+  .standfirst {
+    font-size: 19px;
+    line-height: 1.6;
+    color: var(--ink-2);
+    max-width: 62ch;
+    margin: 0 0 34px;
+  }
+
+  /* ---- Pipeline chain ---- */
+  .chain {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 8px;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+  .chain li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .chain .node {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px 14px;
+    min-width: 128px;
+  }
+  .chain .node b {
+    font-family: var(--f-display);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -.01em;
+  }
+  .chain .node span {
+    font-family: var(--f-mono);
+    font-size: 10.5px;
+    color: var(--ink-3);
+    letter-spacing: .04em;
+  }
+  .chain .arrow {
+    color: var(--line-strong);
+    font-size: 15px;
+    user-select: none;
+  }
+
+  /* ---- Contents rail ---- */
+  nav.toc {
+    position: sticky;
+    top: 32px;
+    font-size: 13.5px;
+    max-height: calc(100vh - 64px);
+    overflow-y: auto;
+  }
+  nav.toc p.tl {
+    font-family: var(--f-mono);
+    font-size: 10.5px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin: 0 0 14px;
+  }
+  nav.toc ol {
+    list-style: none;
+    margin: 0 0 22px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+  nav.toc a {
+    display: flex;
+    gap: 10px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    color: var(--ink-2);
+    text-decoration: none;
+    border-left: 2px solid transparent;
+    line-height: 1.4;
+  }
+  nav.toc a:hover { background: var(--surface-2); color: var(--ink); }
+  nav.toc a.on {
+    color: var(--accent);
+    border-left-color: var(--accent);
+    background: var(--accent-soft);
+    font-weight: 500;
+  }
+  nav.toc a .n {
+    font-family: var(--f-mono);
+    font-size: 11px;
+    color: var(--ink-3);
+    padding-top: 2px;
+  }
+  nav.toc a.on .n { color: var(--accent); }
+
+  /* ---- Sections ---- */
+  section { scroll-margin-top: 24px; margin-bottom: 60px; }
+  .sec-head {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    margin-bottom: 6px;
+  }
+  .step-n {
+    font-family: var(--f-mono);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border-radius: 5px;
+    padding: 3px 8px;
+    flex-shrink: 0;
+    letter-spacing: .04em;
+  }
+  h2 {
+    font-family: var(--f-display);
+    font-weight: 600;
+    font-size: 28px;
+    letter-spacing: -.02em;
+    line-height: 1.2;
+    margin: 0;
+    text-wrap: balance;
+  }
+  .framework {
+    font-family: var(--f-mono);
+    font-size: 11px;
+    color: var(--ink-3);
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    margin: 0 0 18px 0;
+  }
+  h3 {
+    font-family: var(--f-display);
+    font-weight: 600;
+    font-size: 17px;
+    letter-spacing: -.01em;
+    margin: 32px 0 10px;
+    text-wrap: balance;
+  }
+  p { margin: 0 0 16px; }
+  main ul, main ol.body-list {
+    margin: 0 0 16px;
+    padding-left: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  li::marker { color: var(--ink-3); }
+  a { color: var(--accent); }
+
+  /* ---- Inline devices ---- */
+  .ui {
+    font-family: var(--f-body);
+    font-size: 13px;
+    font-weight: 500;
+    background: var(--accent-soft);
+    color: var(--accent);
+    border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+    border-radius: 5px;
+    padding: 1px 7px;
+    white-space: nowrap;
+  }
+  .path {
+    font-family: var(--f-mono);
+    font-size: 13px;
+    color: var(--ink-2);
+    background: var(--surface-2);
+    border-radius: 4px;
+    padding: 1px 6px;
+  }
+  code, .num {
+    font-family: var(--f-mono);
+    font-size: 13.5px;
+    background: var(--surface-2);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---- Control spec grid ---- */
+  .spec {
+    display: grid;
+    grid-template-columns: minmax(150px, 210px) 1fr;
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 0 0 20px;
+  }
+  .spec > div {
+    background: var(--surface);
+    padding: 12px 15px;
+  }
+  .spec .k {
+    font-family: var(--f-mono);
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--ink);
+    line-height: 1.5;
+  }
+  .spec .v { font-size: 14.5px; color: var(--ink-2); line-height: 1.55; }
+  .spec .v strong { color: var(--ink); font-weight: 600; }
+
+  /* ---- Callouts ---- */
+  .note {
+    border-left: 3px solid var(--accent);
+    background: var(--surface);
+    border-radius: 0 8px 8px 0;
+    padding: 14px 18px;
+    margin: 0 0 20px;
+    font-size: 14.5px;
+    color: var(--ink-2);
+    box-shadow: var(--shadow);
+  }
+  .note b {
+    display: block;
+    font-family: var(--f-display);
+    font-size: 13px;
+    letter-spacing: .01em;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+  .note.warn { border-left-color: var(--warn); }
+  .note.warn b { color: var(--warn); }
+  .note.bad  { border-left-color: var(--bad); }
+  .note.bad b { color: var(--bad); }
+  .note.good { border-left-color: var(--good); }
+  .note.good b { color: var(--good); }
+  .note p:last-child { margin-bottom: 0; }
+
+  /* ---- Fast path ---- */
+  .fast {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin: 0 0 22px;
+  }
+  .fast p.lbl {
+    font-family: var(--f-mono);
+    font-size: 10.5px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin: 0 0 8px;
+  }
+  .fast ol {
+    margin: 0;
+    padding-left: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 14.5px;
+    color: var(--ink-2);
+  }
+
+  /* ---- Tables ---- */
+  .tw { overflow-x: auto; margin: 0 0 20px; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  th {
+    text-align: left;
+    font-family: var(--f-mono);
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+  }
+  td {
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--line);
+    color: var(--ink-2);
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  td strong { color: var(--ink); font-weight: 600; }
+  td.mono, th.mono {
+    font-family: var(--f-mono);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  /* ---- State pills ---- */
+  .pill {
+    display: inline-block;
+    font-family: var(--f-mono);
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 4px;
+    padding: 2px 7px;
+    white-space: nowrap;
+  }
+  .pill.g { background: var(--good-soft); color: var(--good); }
+  .pill.w { background: var(--warn-soft); color: var(--warn); }
+  .pill.b { background: var(--bad-soft);  color: var(--bad); }
+  .pill.i { background: var(--info-soft); color: var(--info); }
+  .pill.n { background: var(--surface-2); color: var(--ink-3); }
+
+  /* ---- Legend ---- */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+    padding: 14px 18px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    font-size: 13.5px;
+    color: var(--ink-2);
+    margin-bottom: 34px;
+  }
+  .legend span { display: inline-flex; align-items: center; gap: 7px; }
+
+  /* ---- Footer ---- */
+  footer {
+    border-top: 1px solid var(--line);
+    margin-top: 20px;
+    padding-top: 22px;
+    font-size: 13.5px;
+    color: var(--ink-3);
+  }
+
+  a:focus-visible, .chain .node:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    * { transition: none !important; }
+  }
+
+  @media (max-width: 900px) {
+    .cols { grid-template-columns: 1fr; gap: 30px; }
+    nav.toc { position: static; max-height: none; }
+    nav.toc ol { flex-direction: row; flex-wrap: wrap; gap: 6px; }
+    nav.toc a { border-left: none; border: 1px solid var(--line); }
+    header.top { padding-top: 44px; }
+    .spec { grid-template-columns: 1fr; }
+    .spec .k { padding-bottom: 0; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="top">
+    <p class="eyebrow">LPSim &middot; Operator's manual</p>
+    <h1>LPSim Field Guide</h1>
+    <p class="standfirst">
+      LPSim turns the FATE, RANGE, VALID and SMART frameworks into four screens. This guide walks
+      the whole loop &mdash; from screening hundreds of pools down to a position you can defend,
+      size, and monitor &mdash; and tells you which numbers to trust along the way.
+    </p>
+    <ul class="chain">
+      <li>
+        <span class="node"><b>Discovery</b><span>find candidates</span></span>
+        <span class="arrow">&rarr;</span>
+      </li>
+      <li>
+        <span class="node"><b>Simulator</b><span>range &amp; APR</span></span>
+        <span class="arrow">&rarr;</span>
+      </li>
+      <li>
+        <span class="node"><b>Portfolio</b><span>size &amp; stress</span></span>
+        <span class="arrow">&rarr;</span>
+      </li>
+      <li>
+        <span class="node"><b>Track</b><span>monitor &amp; rebalance</span></span>
+      </li>
+    </ul>
+  </header>
+
+  <div class="cols">
+
+    <nav class="toc" aria-label="Contents">
+      <p class="tl">Contents</p>
+      <ol>
+        <li><a href="#start"><span class="n">00</span><span>Before you start</span></a></li>
+        <li><a href="#discover"><span class="n">01</span><span>Find candidate pools</span></a></li>
+        <li><a href="#frame"><span class="n">02</span><span>Frame the pool</span></a></li>
+        <li><a href="#range"><span class="n">03</span><span>Pick the range</span></a></li>
+        <li><a href="#apr"><span class="n">04</span><span>Get an APR you trust</span></a></li>
+        <li><a href="#dl"><span class="n">05</span><span>Stress divergence loss</span></a></li>
+        <li><a href="#valid"><span class="n">06</span><span>Validate the position</span></a></li>
+        <li><a href="#portfolio"><span class="n">07</span><span>Size the portfolio</span></a></li>
+        <li><a href="#track"><span class="n">08</span><span>Track and rebalance</span></a></li>
+        <li><a href="#custom"><span class="n">09</span><span>Positions elsewhere</span></a></li>
+      </ol>
+      <p class="tl">Reference</p>
+      <ol>
+        <li><a href="#cheat"><span class="n">&mdash;</span><span>Threshold cheat sheet</span></a></li>
+        <li><a href="#faster"><span class="n">&mdash;</span><span>Work faster</span></a></li>
+        <li><a href="#limits"><span class="n">&mdash;</span><span>What it doesn't cover</span></a></li>
+        <li><a href="#run"><span class="n">&mdash;</span><span>Running LPSim</span></a></li>
+      </ol>
+    </nav>
+
+    <main>
+
+      <div class="legend">
+        <span><span class="ui">Control</span> a button or field in the app</span>
+        <span><code>0.059%</code> a value or threshold</span>
+        <span><span class="path">/simulator</span> a page</span>
+      </div>
+
+      <!-- 00 -->
+      <section id="start">
+        <div class="sec-head"><span class="step-n">00</span><h2>Before you start</h2></div>
+        <p class="framework">What the data is, and isn't</p>
+        <p>
+          LPSim reads live Uniswap V3 data from The Graph for <strong>Ethereum, Arbitrum and
+          Base</strong>. Everything on Discovery and every live simulation is real on-chain
+          history &mdash; not estimates.
+        </p>
+        <p>
+          Two things are worth knowing up front, because they change how you read the screens:
+        </p>
+        <div class="spec">
+          <div class="k">Preset mode</div>
+          <div class="v">
+            Opening <span class="path">/simulator</span> with no pool selected loads one of five
+            <strong>demo presets</strong> built on synthetic price history. It is there to explore
+            the mechanics. Never size a real position from it &mdash; always arrive at the
+            simulator through <span class="ui">Simulate</span> on a Discovery row.
+          </div>
+          <div class="k">Fee APR only</div>
+          <div class="v">
+            Every APR in LPSim is <strong>fee income</strong>. It excludes divergence loss by
+            design, which is why steps <a href="#dl">05</a> and <a href="#valid">06</a> exist.
+            An APR you like is only half an answer.
+          </div>
+        </div>
+        <div class="note">
+          <b>The loop, in one line</b>
+          <p>
+            Screen on Discovery &rarr; simulate one pool properly &rarr; save it to the Portfolio
+            &rarr; stress the whole book &rarr; deploy on the DEX &rarr; watch it on Track.
+            LPSim never touches your wallet or signs anything; it is a research and monitoring
+            tool, and you execute elsewhere.
+          </p>
+        </div>
+      </section>
+
+      <!-- 01 -->
+      <section id="discover">
+        <div class="sec-head"><span class="step-n">01</span><h2>Find candidate pools</h2></div>
+        <p class="framework">Discovery &middot; FATE &mdash; fundamentals, APR, TVL, exposure</p>
+        <p>
+          The table loads the top pools by TVL for the networks you select. Sensible floors are
+          already applied (<code>TVL &ge; $1M</code>, <code>APR &ge; 1%</code>,
+          <code>fees &ge; $1K</code>, <code>volume &ge; $1M</code>), so you are starting from
+          liquid pools, not the long tail.
+        </p>
+
+        <div class="fast">
+          <p class="lbl">Fast path</p>
+          <ol>
+            <li>Pick your networks and a <span class="ui">Timeframe</span> &mdash; 30 days is the
+              sane default.</li>
+            <li>Type the assets you actually want to hold into
+              <span class="ui">Filter by asset</span> (e.g. <code>ETH, WBTC, LINK</code>).</li>
+            <li>Hit <span class="ui">FATE filters</span> to apply the framework's bounds in one
+              click.</li>
+            <li>Sort by <span class="ui">Fee/TVL</span> and open the best two or three with
+              <span class="ui">Simulate</span>.</li>
+          </ol>
+        </div>
+
+        <h3>Reading the columns</h3>
+        <p>
+          Four columns do the real screening work. The rest is context.
+        </p>
+        <div class="spec">
+          <div class="k">Fee/TVL</div>
+          <div class="v">
+            Daily fees divided by TVL &mdash; how hard each dollar of liquidity is working.
+            <strong>The single best "is this pool actually busy" signal.</strong> It turns green at
+            <code>&ge; 0.059%</code>, the FATE threshold for an actively traded pool.
+          </div>
+          <div class="k">Vol CV</div>
+          <div class="v">
+            Volume consistency: the variation in daily volume. <strong>Lower is steadier.</strong>
+            Turns red above <code>100%</code>, which means volume is erratic and any APR built on
+            its average is fragile.
+          </div>
+          <div class="k">Correlation</div>
+          <div class="v">
+            Pearson correlation of the two tokens' USD prices, with <code>7d</code> and
+            <code>30d</code> underneath so you can see the trend. Above <code>0.5</code> is the
+            FATE floor. Rising 7d correlation after a divergence is a good entry signal.
+          </div>
+          <div class="k">Price Volatility</div>
+          <div class="v">
+            Max deviation from the mean over the timeframe. Under <code>15%</code> keeps
+            divergence loss predictable. This is usually the column that eliminates a pool.
+          </div>
+        </div>
+
+        <div class="note warn">
+          <b>Correlation reads 0.00% on stablecoin pairs &mdash; that's correct, not broken</b>
+          <p>
+            A stablecoin's USD price is flat, so correlation against it is mathematically
+            undefined and reported as zero. That is also why
+            <span class="ui">FATE filters</span> deliberately <em>omits</em> the correlation
+            bound: applying it would wipe out every ETH/USDC-style pool. Judge correlation
+            yourself, and only for crypto-to-crypto pairs.
+          </p>
+        </div>
+        <div class="note warn">
+          <b>If FATE filters returns nothing, the market is calm &mdash; not the app</b>
+          <p>
+            The preset demands <code>APR 30&ndash;500%</code>, <code>TVL &ge; $1M</code> and
+            <code>volatility &lt; 15%</code> simultaneously. In a quiet stretch, blue-chip pools
+            sit near <code>15&ndash;18%</code> volatility and few clear the APR floor. Widen the
+            volatility bound with the small filter icon in that column header, or add networks
+            &mdash; Base and Arbitrum usually carry the higher-APR pools.
+          </p>
+        </div>
+
+        <h3>Position sizing starts here</h3>
+        <p>
+          Note the pool's TVL before you leave. FATE caps a position at <code>5%</code> of pool
+          TVL &mdash; up to <code>10%</code> when the same pair has deep liquidity in another
+          pool. LPSim checks this for you later, but choosing a pool that is too small for your
+          intended size wastes the whole analysis.
+        </p>
+      </section>
+
+      <!-- 02 -->
+      <section id="frame">
+        <div class="sec-head"><span class="step-n">02</span><h2>Frame the pool</h2></div>
+        <p class="framework">Simulator &middot; pre-simulation setup</p>
+        <p>
+          Arriving via <span class="ui">Simulate</span> loads real candles, real volume and the
+          pool's real liquidity distribution. Three things to settle before you touch the range.
+        </p>
+
+        <div class="spec">
+          <div class="k">Orientation</div>
+          <div class="v">
+            LPSim auto-orients so the price reads naturally &mdash; a stablecoin becomes the
+            quote, so you see <code>2,475 USDC/WETH</code>, not <code>0.0004 WETH/USDC</code>.
+            <span class="ui">&#8645; flip</span> swaps it. The flip is instant and local: it
+            inverts the chart and your bounds without refetching, and APR is unchanged.
+            <strong>Match whatever your DEX shows</strong> so the range you set here is the range
+            you paste there.
+          </div>
+          <div class="k">Current price</div>
+          <div class="v">
+            Taken from the pool's own tick. Override it only to model a "what if price were
+            here" scenario &mdash; for real setup, leave it alone.
+          </div>
+          <div class="k">Investment (USD)</div>
+          <div class="v">
+            <strong>Set your real deployment size now.</strong> LPSim dilutes APR by your own
+            liquidity, so a large deposit into a thin pool visibly lowers the projected return
+            &mdash; which is exactly the effect you want to see before committing.
+          </div>
+        </div>
+
+        <div class="note good">
+          <b>Set the holding period before anything else</b>
+          <p>
+            <span class="ui">Holding period (days)</span> cascades through the entire page: it
+            sets the calculation window to <code>2&times;</code> your holding period, defines the
+            move size the range guard tests against, and sets the recovery horizon that grades
+            every divergence scenario. Change it first and every downstream verdict is aimed at
+            your actual plan.
+          </p>
+        </div>
+      </section>
+
+      <!-- 03 -->
+      <section id="range">
+        <div class="sec-head"><span class="step-n">03</span><h2>Pick the range</h2></div>
+        <p class="framework">Simulator &middot; RANGE &mdash; time, correlation, fluctuation, trend, exposure</p>
+        <p>
+          A tighter range earns more per dollar but exits sooner. The framework resolves that
+          trade-off with your holding period, not with a guess.
+        </p>
+
+        <div class="fast">
+          <p class="lbl">Fast path</p>
+          <ol>
+            <li>Set <span class="ui">Holding period (days)</span> &mdash; the
+              <span class="ui">Calc window</span> follows at <code>2&times;</code>.</li>
+            <li>Click a width pill (<code>&plusmn;5%</code> &hellip; <code>&plusmn;25%</code>) as
+              a starting point, or drag the <strong>Min</strong> and <strong>Max</strong> lines
+              directly on the price chart.</li>
+            <li>Read the <strong>Range guard</strong> and widen the side it flags.</li>
+            <li>Slide the exposure control until the token split matches your market view.</li>
+          </ol>
+        </div>
+
+        <h3>The range guard</h3>
+        <p>
+          This is the framework's "notable fluctuations" test, computed from the pool's real
+          candles. It compares your bounds against the largest moves that actually happened in
+          the window &mdash; both intraday spikes and full holding-period trends &mdash; and warns
+          when a repeat would push you out:
+        </p>
+        <div class="note bad">
+          <b>&#9888; Down: &minus;11.3% seen &middot; range &minus;10.0%</b>
+          <p>
+            Translation: the pool fell further than your lower bound within a single holding
+            period in the last 90 days. Widen the downside, shorten your holding period, or accept
+            that you will be rebalancing. A guard that passes both directions
+            (<span class="pill g">&#10003;</span>) means your range has survived recent history.
+          </p>
+        </div>
+
+        <h3>Exposure targeting</h3>
+        <p>
+          The slider under the token split shifts the range to hit a target ratio
+          <strong>while preserving its width</strong> &mdash; so you change your directional bias
+          without changing how tight the position is. Match it to your view:
+        </p>
+        <div class="tw">
+          <table>
+            <thead>
+              <tr><th>View</th><th class="mono">Split</th><th>What the position does</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>Neutral</strong> &mdash; sideways market</td><td class="mono">50 / 50</td><td>Pure fee harvesting; the pool sells rallies and buys dips around you.</td></tr>
+              <tr><td><strong>Moderately bullish</strong></td><td class="mono">60/40 &ndash; 65/35</td><td>More of the base asset, so you keep more upside.</td></tr>
+              <tr><td><strong>Strongly bullish</strong></td><td class="mono">70/30 &ndash; 80/20</td><td>Heavy base exposure. Needs real conviction &mdash; you are closer to holding than to LPing.</td></tr>
+              <tr><td><strong>Accumulating</strong></td><td class="mono">stable-heavy</td><td>The pool buys the asset as it falls; track your effective average entry.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          Watch the <span class="ui">30d In-Range Prob.</span> card as you work. It is a
+          volatility model, not a promise, but a range showing <code>20%</code> is telling you
+          something the APR number won't.
+        </p>
+      </section>
+
+      <!-- 04 -->
+      <section id="apr">
+        <div class="sec-head"><span class="step-n">04</span><h2>Get an APR you trust</h2></div>
+        <p class="framework">Simulator &middot; realistic vs worst-case</p>
+        <p>
+          The headline APR depends entirely on how much liquidity you assume you are competing
+          with. LPSim reconstructs the pool's real tick-level liquidity, so you can ask that
+          question four ways.
+        </p>
+
+        <div class="tw">
+          <table>
+            <thead>
+              <tr><th>Calculation method</th><th>Assumes</th><th>Use it for</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="mono">Current price</td><td>Liquidity at the current tick</td><td>The realistic default.</td></tr>
+              <tr><td class="mono">Peak in range</td><td>The most crowded point in your range</td><td><strong>Worst case.</strong> Use it when a liquidity wall sits next to the current price &mdash; price tends to hover there.</td></tr>
+              <tr><td class="mono">Avg. in range</td><td>Liquidity averaged across your range</td><td>A smoothed middle estimate.</td></tr>
+              <tr><td class="mono">Custom price</td><td>Liquidity wherever you point</td><td>Modelling a specific level you expect price to sit at.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>
+          Cross-check the <strong>Liquidity distribution</strong> chart underneath the candles.
+          Green bars are inside your range; a tall wall next to the current price is the
+          "institutional yield-stealing" pattern the VALID framework warns about, and it is the
+          reason <span class="ui">Peak in range</span> can halve your APR.
+        </p>
+
+        <h3>Volume basis</h3>
+        <p>
+          <span class="ui">7d</span> / <span class="ui">21d</span> / <span class="ui">30d</span>
+          sets how much history feeds the fee estimate; <span class="ui">trim spikes</span>
+          (on by default) drops days above <code>3&times;</code> the median so one anomalous
+          session cannot inflate the projection. The panel tells you exactly what it used, e.g.
+          <code>$72.0M/day over 30d &middot; 1 spike day excluded</code>.
+        </p>
+
+        <div class="note good">
+          <b>The number that matters is the pair</b>
+          <p>
+            The APR card shows your realistic figure with the <strong>worst-case</strong> beside
+            it. Deploy only when <em>both</em> still look attractive. A pool that reads
+            <code>43%</code> at current price and <code>17%</code> at peak distribution is really
+            a 17% pool with upside &mdash; size it accordingly.
+          </p>
+        </div>
+      </section>
+
+      <!-- 05 -->
+      <section id="dl">
+        <div class="sec-head"><span class="step-n">05</span><h2>Stress divergence loss</h2></div>
+        <p class="framework">Simulator &middot; the go / no-go test</p>
+        <p>
+          Divergence loss is what you give up versus simply holding the two tokens. The question
+          is never "is there any?" &mdash; there always is &mdash; but
+          <strong>how many days of fees it takes to earn it back</strong>.
+        </p>
+        <p>
+          The panel pre-loads scenarios in both directions, including the largest moves these two
+          tokens <em>actually made together</em> in their history (tagged
+          <span class="pill i">real</span>). Add your own by typing each token's percentage move
+          and pressing <span class="ui">Simulate</span>.
+        </p>
+
+        <div class="tw">
+          <table>
+            <thead>
+              <tr><th>Verdict</th><th>Recovery</th><th>Meaning</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><span class="pill g">fast</span></td><td class="mono">&le; holding period</td><td>Fees repay the loss within your planned horizon. Green light.</td></tr>
+              <tr><td><span class="pill w">ok</span></td><td class="mono">&le; 2&times; holding period</td><td>Acceptable, especially for short horizons. Watch it.</td></tr>
+              <tr><td><span class="pill b">slow</span></td><td class="mono">beyond that</td><td>The position cannot earn its way out at current fees.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Read it differently by pool type</h3>
+        <div class="spec">
+          <div class="k">Crypto &ndash; crypto</div>
+          <div class="v">
+            <strong>Recovery speed is the whole test.</strong> Simulate both directions; you want
+            <span class="pill g">fast</span> or <span class="pill w">ok</span> on each. A pair
+            that only survives one direction will eventually meet the other.
+          </div>
+          <div class="k">Crypto &ndash; stable</div>
+          <div class="v">
+            <strong>Divergence loss is a feature, not a bug.</strong> The pool sells the asset as
+            it rises and buys as it falls. Expect <span class="pill b">slow</span> verdicts and
+            judge the position on income and the exposure you wanted instead. LPSim says so in the
+            panel footer.
+          </div>
+          <div class="k">Stable &ndash; stable</div>
+          <div class="v">Ignore divergence loss; only total fee income and depeg risk matter.</div>
+        </div>
+        <p>
+          The <strong>Scenario analysis</strong> table beside it runs the same logic across a grid
+          of price moves, with its own <span class="ui">Recover</span> column &mdash; a quick way
+          to see where the position stops making sense.
+        </p>
+      </section>
+
+      <!-- 06 -->
+      <section id="valid">
+        <div class="sec-head"><span class="step-n">06</span><h2>Validate the position</h2></div>
+        <p class="framework">Simulator &middot; VALID &mdash; volatility, APR consistency, loss recovery, inter-asset correlation, depth</p>
+        <p>
+          The checklist grades everything above in one place. Five checks compute themselves from
+          the simulation; two are yours to answer honestly.
+        </p>
+        <div class="tw">
+          <table>
+            <thead>
+              <tr><th class="mono">&nbsp;</th><th>Check</th><th>Passes when</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="mono"><strong>A</strong></td><td>Volume consistency</td><td class="mono">CV &le; 50%</td></tr>
+              <tr><td class="mono"><strong>L</strong></td><td>Loss recovery</td><td class="mono">&le; 2&times; holding period</td></tr>
+              <tr><td class="mono"><strong>I</strong></td><td>Correlation (crypto&ndash;crypto only)</td><td class="mono">30d &ge; 0.5</td></tr>
+              <tr><td class="mono"><strong>D</strong></td><td>Liquidity depth</td><td class="mono">worst-case keeps &ge; 50% of APR</td></tr>
+              <tr><td class="mono"><strong>$</strong></td><td>Position size</td><td class="mono">&le; 5% of pool TVL</td></tr>
+              <tr><td class="mono"><strong>V</strong></td><td>Volatility comfort <span class="pill n">manual</span></td><td>You can hold through the swings shown</td></tr>
+              <tr><td class="mono"><strong>F</strong></td><td>Fundamentals <span class="pill n">manual</span></td><td>You understand and want both assets</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          Checks marked <span class="pill n">&ndash;</span> don't apply to this pool type and are
+          excluded from the score rather than counted against it. Don't compromise on a failing
+          check unless something else clearly compensates &mdash; that is the entire point of
+          having a checklist.
+        </p>
+        <p>
+          Happy with it? <span class="ui">&#65291; Add to portfolio</span> in the header saves the
+          position with its metrics attached.
+        </p>
+      </section>
+
+      <!-- 07 -->
+      <section id="portfolio">
+        <div class="sec-head"><span class="step-n">07</span><h2>Size the portfolio</h2></div>
+        <p class="framework">Portfolio &middot; allocation and stress testing</p>
+        <p>
+          Individually sound positions can still make a fragile book. This page asks whether they
+          hold together.
+        </p>
+
+        <h3>Risk grades and the backbone</h3>
+        <p>
+          Every saved position is scored out of <code>100</code> on volume consistency, recovery,
+          correlation, depth and pool size, then graded
+          <span class="pill g">A</span> <code>&ge; 75</code>,
+          <span class="pill w">B</span> <code>&ge; 55</code>,
+          <span class="pill b">C</span> below that. The best risk-adjusted position is tagged
+          <span class="pill i">&#9733; Backbone</span> &mdash; that is your largest allocation,
+          and everything else sizes down from it.
+        </p>
+
+        <h3>Allocations</h3>
+        <p>
+          Edit <span class="ui">Invested (USD)</span> inline. Each edit re-runs that position, so
+          APR moves as your size dilutes the pool &mdash; watch a large allocation eat its own
+          return. The summary strip keeps weighted APR and projected daily and monthly fees
+          current.
+        </p>
+
+        <h3>The stress test</h3>
+        <p>
+          Set a market-wide move and run it. Stablecoins stay pinned at <code>$1</code> while
+          every other asset moves together, and LPSim aggregates divergence loss, post-move value
+          and <strong>how many days of portfolio fees repay it</strong>.
+        </p>
+        <div class="note good">
+          <b>What a healthy book looks like</b>
+          <p>
+            Positions offsetting each other. In a real <code>&minus;20%</code> run, a correlated
+            WBTC/WETH position took <em>zero</em> divergence loss while an ETH/USDC position took
+            a real one &mdash; that is diversification doing its job. Aim for a recovery time
+            inside a couple of weeks of fees; if the whole book needs months, it is too
+            correlated or too tightly ranged.
+          </p>
+        </div>
+        <div class="note">
+          <b>Where this lives</b>
+          <p>
+            The portfolio is stored in your browser, not on a server. It is private to that
+            browser and profile, and clearing site data clears it.
+          </p>
+        </div>
+      </section>
+
+      <!-- 08 -->
+      <section id="track">
+        <div class="sec-head"><span class="step-n">08</span><h2>Track and rebalance</h2></div>
+        <p class="framework">Track &middot; SMART &mdash; situation, method, analysis, range, timing</p>
+        <p>
+          Paste any wallet address and LPSim pulls its live Uniswap V3 positions across the
+          selected networks. No connection or signature &mdash; it is public chain data, so you
+          can watch any address.
+        </p>
+
+        <h3>The four numbers</h3>
+        <div class="spec">
+          <div class="k">Value</div>
+          <div class="v">What is in the position now, and the token split it has drifted to.</div>
+          <div class="k">Unclaimed fees</div>
+          <div class="v">Computed from on-chain fee growth &mdash; exact, not estimated.</div>
+          <div class="k">Net vs HODL</div>
+          <div class="v">
+            <strong>The line that matters for crypto&ndash;crypto.</strong> Fees minus divergence
+            loss, against four benchmarks: your initial assets (the minimum bar), a 50/50 split,
+            and all-of-either token. <code>3&ndash;4</code> green is strong,
+            <code>2</code> is worth monitoring, <code>0&ndash;1</code> means the pool or the range
+            needs work.
+          </div>
+          <div class="k">Earnings retention</div>
+          <div class="v">
+            How much of your fee income you actually keep after divergence loss. Think of
+            <code>APR &times; retention</code> as your realistic APR. The trend matters more than
+            the level.
+          </div>
+        </div>
+
+        <h3>In-range time</h3>
+        <p>
+          Out of range means earning nothing, so LPSim records history and reports the share of
+          observed time you were actually in range, with a timeline underneath
+          (<span class="pill g">in range</span> / <span class="pill b">out</span> /
+          <span class="pill n">unobserved</span>).
+        </p>
+        <p>
+          Press <span class="ui">&#9734; Watch</span> to have the backend snapshot the wallet
+          every <code>15</code> minutes so history accrues while the page is closed. It is
+          opt-in because each poll spends metered Graph queries. Unwatching keeps everything
+          already recorded.
+        </p>
+        <div class="note">
+          <b>Coverage is reported honestly</b>
+          <p>
+            History only accrues while the backend is running, so expect the first useful
+            percentage after a few intervals. Gaps longer than <code>90</code> minutes count as
+            <em>unobserved</em> rather than being credited to your last known state &mdash;
+            downtime lowers the coverage figure instead of quietly inflating in-range time.
+          </p>
+        </div>
+
+        <h3>When to rebalance</h3>
+        <p>
+          LPSim raises SMART flags on each card. The framework's timing rules are the valuable
+          part:
+        </p>
+        <ul>
+          <li><strong>Wait 48&ndash;72 hours</strong> before acting on an out-of-range position
+            unless it is clearly deteriorating &mdash; price often comes back.</li>
+          <li><strong>The best moment is your original entry price</strong>, where divergence
+            loss is roughly zero. LPSim flags it when price returns within
+            <code>&plusmn;2%</code>.</li>
+          <li><strong>Prefer adding capital over swapping.</strong> Adding fresh capital to
+            restore your ratio avoids realising the loss; swapping locks it in and may trigger
+            tax.</li>
+          <li><strong>Execute on consolidation</strong>, in quieter volume, with gas in mind
+            &mdash; not in the middle of the move.</li>
+          <li>Exceptions that justify acting immediately: a clear trend change, major
+            fundamental news, or a fast move on heavy volume.</li>
+        </ul>
+        <p>
+          <span class="ui">Simulate this pool</span> on any card reopens the simulator for that
+          pool so you can design the replacement range before you touch anything.
+        </p>
+
+        <div class="note warn">
+          <b>Fees shown are unclaimed only</b>
+          <p>
+            The Uniswap subgraph reports corrupted lifetime collected-fee data (the second token
+            mirrors the first), so LPSim excludes it rather than showing a wrong number. For a
+            position that has already claimed fees, your true earnings and true
+            <em>Net vs HODL</em> are <strong>better</strong> than displayed. Passive positions
+            that never claimed are exact.
+          </p>
+        </div>
+      </section>
+
+      <!-- 09 -->
+      <section id="custom">
+        <div class="sec-head"><span class="step-n">09</span><h2>Positions elsewhere</h2></div>
+        <p class="framework">Track &middot; custom positions</p>
+        <p>
+          For pools LPSim cannot see &mdash; another DEX, another chain &mdash; track them by
+          hand. Same analytics, entered manually.
+        </p>
+        <ol class="body-list">
+          <li>
+            <span class="ui">&#65291; Add custom position</span>: token symbols plus their
+            <strong>CoinGecko API ids</strong> (<code>ethereum</code>, <code>lido-dao</code>) for
+            live pricing, the fee tier, and your price range. Exchange and network are labels for
+            your own filtering. <strong>Check the base/quote orientation matches your DEX.</strong>
+            For anything CoinGecko doesn't list, set a manual USD price instead.
+          </li>
+          <li>
+            <span class="ui">Deposit</span>: exact token amounts, total USD value, gas, and the
+            timestamp &mdash; from your DEX transaction or a block explorer.
+          </li>
+          <li>
+            <span class="ui">Log check</span>: paste four live values from the DEX position page
+            &mdash; both token balances, unclaimed fees per token, and the current pool price.
+            Takes about 30 seconds and refreshes every metric on the card.
+          </li>
+          <li>
+            <span class="ui">Claim</span> and <span class="ui">Withdraw</span> record fee claims
+            and the exit. Withdrawing closes the position, preserving its history and final P/L.
+          </li>
+        </ol>
+        <p>
+          Custom positions compute value, earnings, divergence loss, net vs HODL, overall P/L
+          including gas, and in-range status. Fee APR appears once there is at least a day of
+          history. Like the portfolio, they live in your browser.
+        </p>
+      </section>
+
+      <!-- Cheat sheet -->
+      <section id="cheat">
+        <div class="sec-head"><h2>Threshold cheat sheet</h2></div>
+        <p class="framework">Every number the frameworks ask you to check</p>
+        <div class="tw">
+          <table>
+            <thead>
+              <tr><th>Metric</th><th class="mono">Target</th><th>Where</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>APR band</td><td class="mono">30&ndash;500% <span class="pill n">sweet spot 50&ndash;200%</span></td><td>Discovery</td></tr>
+              <tr><td>TVL floor</td><td class="mono">&ge; $1M</td><td>Discovery</td></tr>
+              <tr><td>Fee / TVL</td><td class="mono">&ge; 0.059%</td><td>Discovery</td></tr>
+              <tr><td>Price volatility</td><td class="mono">&lt; 15%</td><td>Discovery</td></tr>
+              <tr><td>Volume CV</td><td class="mono">&le; 50% good &middot; &gt; 100% erratic</td><td>Discovery, VALID</td></tr>
+              <tr><td>Correlation (crypto&ndash;crypto)</td><td class="mono">&ge; 0.5</td><td>Discovery, VALID</td></tr>
+              <tr><td>Calculation window</td><td class="mono">2&times; holding period</td><td>Simulator</td></tr>
+              <tr><td>Depth retention</td><td class="mono">worst-case &ge; 50% of APR</td><td>VALID</td></tr>
+              <tr><td>DL recovery</td><td class="mono">&le; 2&times; holding period</td><td>Divergence panel</td></tr>
+              <tr><td>Recovery, 1&ndash;5 day moves</td><td class="mono">within 10 days</td><td>VALID guidance</td></tr>
+              <tr><td>Recovery, 5&ndash;10 day moves</td><td class="mono">within 14&ndash;20 days</td><td>VALID guidance</td></tr>
+              <tr><td>Position size</td><td class="mono">&le; 5% of TVL <span class="pill n">10% if deep elsewhere</span></td><td>VALID</td></tr>
+              <tr><td>Rebalance patience</td><td class="mono">wait 48&ndash;72h</td><td>Track / SMART</td></tr>
+              <tr><td>Zero-DL rebalance window</td><td class="mono">entry price &plusmn;2%</td><td>Track / SMART</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Work faster -->
+      <section id="faster">
+        <div class="sec-head"><h2>Work faster</h2></div>
+        <p class="framework">Shortcuts that save the most time</p>
+        <ul>
+          <li><strong>Set the holding period first.</strong> One field aims the calc window,
+            range guard and every divergence verdict at your actual plan.</li>
+          <li><strong>Drag, don't type.</strong> The <strong>Min</strong>, <strong>Max</strong>
+            and <strong>Now</strong> lines on the price chart are draggable and re-simulate as
+            you release.</li>
+          <li><strong>Width pill first, exposure slider second.</strong> The pills set how tight
+            the range is; the slider then shifts it without changing that width.</li>
+          <li><strong>Compare two methods, not four.</strong>
+            <span class="ui">Current price</span> and <span class="ui">Peak in range</span>
+            bracket your realistic and worst cases; the others are refinements.</li>
+          <li><strong>Never retype a pool.</strong> Use <span class="ui">Simulate</span> from a
+            Discovery row and <span class="ui">Simulate this pool</span> from a tracked position
+            &mdash; both carry the pool through.</li>
+          <li><strong>Flip is free.</strong> Orientation changes are local; no reload, no
+            refetch, APR unchanged.</li>
+          <li><strong>Reset before a new hunt.</strong> <span class="ui">Reset filters</span>
+            restores the defaults; the per-column filter icons handle one-off bounds without
+            disturbing the rest.</li>
+          <li><strong>Watch selectively.</strong> Every watched wallet costs metered queries on
+            each poll. Watch the wallet you actually manage.</li>
+          <li><strong>Compare fee tiers of the same pair.</strong> Discovery lists them
+            separately &mdash; the <code>0.05%</code> and <code>0.3%</code> pools for one pair
+            often have very different Fee/TVL.</li>
+        </ul>
+      </section>
+
+      <!-- Limits -->
+      <section id="limits">
+        <div class="sec-head"><h2>What it doesn't cover</h2></div>
+        <p class="framework">Known limits &mdash; read before sizing anything</p>
+        <div class="spec">
+          <div class="k">Uniswap V3 only</div>
+          <div class="v">Ethereum, Arbitrum and Base. Other venues go in as
+            <a href="#custom">custom positions</a>.</div>
+          <div class="k">Fee APR excludes IL</div>
+          <div class="v">Every APR is fee income. Divergence loss is modelled separately and
+            never netted off automatically.</div>
+          <div class="k">Collected fees excluded</div>
+          <div class="v">Upstream subgraph data is corrupted, so tracked earnings are unclaimed
+            fees only &mdash; conservative for positions that already claimed.</div>
+          <div class="k">Correlation on stables</div>
+          <div class="v">Reports <code>0</code> against a stablecoin by construction. Meaningful
+            only for crypto&ndash;crypto pairs.</div>
+          <div class="k">History needs uptime</div>
+          <div class="v">In-range time only accrues while the backend runs. Coverage is reported
+            so you can see how much was actually observed.</div>
+          <div class="k">Local storage</div>
+          <div class="v">Portfolio and custom positions live in one browser profile. No sync, no
+            backup &mdash; clearing site data clears them.</div>
+          <div class="k">Models, not guarantees</div>
+          <div class="v">In-range probability, stress moves and projected APR are models built on
+            past behaviour. Markets are free to do something new.</div>
+        </div>
+        <div class="note bad">
+          <b>LPSim is research, not advice</b>
+          <p>
+            It never connects a wallet, holds funds, or executes anything. Every deployment,
+            claim and rebalance happens on the DEX, by you, with your own judgement.
+          </p>
+        </div>
+      </section>
+
+      <!-- Run -->
+      <section id="run">
+        <div class="sec-head"><h2>Running LPSim</h2></div>
+        <p class="framework">Local setup</p>
+        <div class="spec">
+          <div class="k">npm run dev</div>
+          <div class="v">Starts both servers &mdash; API on <code>:3001</code>, app on
+            <code>:3000</code>. Run it from the repository root.</div>
+          <div class="k">THE_GRAPH_API_KEY</div>
+          <div class="v">Required, in the root <code>.env</code>. Everything on Discovery and
+            Track depends on it.</div>
+          <div class="k">LPSIM_POLL_INTERVAL_MS</div>
+          <div class="v">Snapshot cadence for watched wallets. Default <code>15</code> minutes;
+            lower it for denser history at the cost of more queries.</div>
+          <div class="k">LPSIM_DB_PATH</div>
+          <div class="v">Moves the history database. Default
+            <code>backend/data/lpsim.db</code>.</div>
+          <div class="k">npm run verify:history</div>
+          <div class="v">In <code>backend/</code> &mdash; checks the in-range time-attribution
+            math against synthetic series.</div>
+        </div>
+        <div class="note">
+          <b>First run is slow</b>
+          <p>
+            Discovery fetches and computes metrics for hundreds of pools per network, then caches
+            for five minutes. The first load after a restart takes a while; every load after it is
+            immediate.
+          </p>
+        </div>
+      </section>
+
+      <footer>
+        Built on the FATE, RANGE, VALID and SMART frameworks. Thresholds are guardrails for
+        early-stage discovery &mdash; as they become intuitive, adjust them to your own goals,
+        risk appetite and experience.
+      </footer>
+
+    </main>
+  </div>
+</div>
+
+<script>
+  // Highlight the section currently in view in the contents rail.
+  (function () {
+    var links = Array.prototype.slice.call(document.querySelectorAll('nav.toc a'));
+    var byId = {};
+    links.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
+
+    var sections = Array.prototype.slice.call(document.querySelectorAll('main section'));
+    if (!sections.length || !('IntersectionObserver' in window)) return;
+
+    var visible = {};
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { visible[e.target.id] = e.isIntersecting; });
+      var current = null;
+      for (var i = 0; i < sections.length; i++) {
+        if (visible[sections[i].id]) { current = sections[i].id; break; }
+      }
+      if (!current) return;
+      links.forEach(function (a) { a.classList.remove('on'); });
+      if (byId[current]) byId[current].classList.add('on');
+    }, { rootMargin: '-10% 0px -70% 0px', threshold: 0 });
+
+    sections.forEach(function (s) { observer.observe(s); });
+  })();
+</script>
