@@ -18,8 +18,42 @@ export interface SmartFlag {
   message:  string;
 }
 
+export interface HistoryPoint {
+  ts:           number;
+  inRange:      boolean;
+  price:        number;
+  valueUsd:     number;
+  unclaimedUsd: number;
+  retention:    number | null;
+}
+
+export interface PositionHistory {
+  snapshots:       number;
+  firstTs:         number;
+  lastTs:          number;
+  observedSeconds: number;
+  inRangeSeconds:  number;
+  gapSeconds:      number;
+  inRangePct:      number | null;
+  coverage:        number;
+  retentionTrend: {
+    first: number; last: number; delta: number;
+    direction: "up" | "down" | "flat";
+  } | null;
+  series: HistoryPoint[];
+}
+
+export interface WatchedWallet {
+  address:    string;
+  network:    string;
+  addedAt:    number;
+  lastPolled: number | null;
+  lastError:  string | null;
+}
+
 export interface TrackedPosition {
   positionId:   string;
+  owner:        string;
   network:      string;
   networkName:  string;
   poolId:       string;
@@ -54,9 +88,16 @@ export interface TrackedPosition {
   daysHeld:          number;
 
   smart: SmartFlag[];
+  history: PositionHistory | null;
 }
 
 export interface TrackApiResponse {
   data: TrackedPosition[];
-  meta: { address: string; networks: string[]; fetchedAt: string };
+  meta: {
+    address: string;
+    networks: string[];
+    fetchedAt: string;
+    watched: string[];
+    pollIntervalMinutes: number;
+  };
 }

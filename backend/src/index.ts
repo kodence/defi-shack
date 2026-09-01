@@ -5,6 +5,7 @@ import poolsRouter from "./routes/pools";
 import simulatorRouter from "./routes/simulator";
 import trackRouter from "./routes/track";
 import pricesRouter from "./routes/prices";
+import { startPoller } from "./services/poller";
 
 const app = express();
 
@@ -18,4 +19,5 @@ app.use("/api/prices", pricesRouter);
 
 app.listen(PORT, () => {
   console.log(`Backend server running on http://localhost:${PORT}`);
+  startPoller();
 });

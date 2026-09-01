@@ -22,8 +22,36 @@ export interface SmartFlag {
   message:  string;
 }
 
+// ── Recorded history (SQLite snapshots) ──────────────────────────────────────
+
+export interface HistoryPoint {
+  ts:           number;
+  inRange:      boolean;
+  price:        number;
+  valueUsd:     number;
+  unclaimedUsd: number;
+  retention:    number | null;   // net vs HODL ÷ earnings at that moment
+}
+
+export interface PositionHistory {
+  snapshots:       number;
+  firstTs:         number;
+  lastTs:          number;
+  observedSeconds: number;   // time actually covered by snapshots
+  inRangeSeconds:  number;
+  gapSeconds:      number;   // elapsed time we could not observe
+  inRangePct:      number | null;
+  coverage:        number;   // observed ÷ (now − firstTs)
+  retentionTrend: {
+    first: number; last: number; delta: number;
+    direction: "up" | "down" | "flat";
+  } | null;
+  series: HistoryPoint[];
+}
+
 export interface TrackedPosition {
   positionId:   string;
+  owner:        string;
   network:      string;
   networkName:  string;
   poolId:       string;
@@ -58,9 +86,18 @@ export interface TrackedPosition {
   daysHeld:          number;
 
   smart: SmartFlag[];
+
+  // Populated from recorded snapshots; null until history exists
+  history: PositionHistory | null;
 }
 
 export interface TrackApiResponse {
   data: TrackedPosition[];
-  meta: { address: string; networks: string[]; fetchedAt: string };
+  meta: {
+    address: string;
+    networks: string[];
+    fetchedAt: string;
+    watched: string[];          // networks currently polled in the background
+    pollIntervalMinutes: number;
+  };
 }

@@ -59,6 +59,10 @@ export function getTrackedPositions(network: string, address: string): Promise<T
 }
 
 // ── Fetch + compute ───────────────────────────────────────────────────────────
+export async function fetchPositionsFresh(network: string, address: string): Promise<TrackedPosition[]> {
+  return fetchPositions(network, address.toLowerCase());
+}
+
 async function fetchPositions(network: string, address: string): Promise<TrackedPosition[]> {
   const config = NETWORKS[network];
   if (!config) throw new Error(`Unknown network: ${network}`);
@@ -99,7 +103,7 @@ async function fetchPositions(network: string, address: string): Promise<Tracked
   }
   const tokenDays = await fetchAllTokenDayDatas([...tokenIds], earliest - 2 * 86_400, url);
 
-  return positions.map(p => computePosition(p, network, config.name, ethUsd, tokenDays));
+  return positions.map(p => computePosition(p, network, config.name, address, ethUsd, tokenDays));
 }
 
 // Price of a token on the entry day (tokenDayDatas are date-desc)
@@ -119,6 +123,7 @@ function computePosition(
   p: RawPosition,
   network: string,
   networkName: string,
+  owner: string,
   ethUsd: number,
   tokenDays: Map<string, SubgraphTokenDayData[]>,
 ): TrackedPosition {
@@ -243,6 +248,7 @@ function computePosition(
 
   return {
     positionId: p.id,
+    owner,
     network, networkName,
     poolId: p.pool.id,
     poolName: `${baseSymbol} / ${quoteSymbol}`,
@@ -271,6 +277,7 @@ function computePosition(
     aprSinceEntry,
     daysHeld,
     smart,
+    history: null,   // filled in by the route from recorded snapshots
   };
 }
 

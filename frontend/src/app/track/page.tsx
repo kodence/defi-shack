@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import { formatUSD } from "@/utils/format";
 import { NETWORKS } from "@/utils/constants";
 import CustomPositions from "@/components/track/CustomPositions";
+import PositionHistoryPanel from "@/components/track/PositionHistoryPanel";
 
 const ADDR_KEY = "lpsim.track.address";
 const ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
@@ -56,6 +57,9 @@ export default function TrackPage() {
   const [positions, setPositions] = useState<TrackedPosition[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [watched, setWatched] = useState<string[]>([]);
+  const [pollMins, setPollMins] = useState(15);
+  const [watchBusy, setWatchBusy] = useState(false);
 
   const load = useCallback(async (addr: string, nets: string[]) => {
     if (!ADDRESS_RE.test(addr)) {
@@ -67,6 +71,8 @@ export default function TrackPage() {
     try {
       const res = await api.track(addr, nets);
       setPositions(res.data);
+      setWatched(res.meta.watched);
+      setPollMins(res.meta.pollIntervalMinutes);
       try { localStorage.setItem(ADDR_KEY, addr); } catch {}
     } catch (e) {
       setError(e instanceof Error ? e.message : "Lookup failed");
@@ -75,6 +81,26 @@ export default function TrackPage() {
       setLoading(false);
     }
   }, []);
+
+  // Watching records a snapshot every poll interval so in-range time and the
+  // earnings-retention trend keep accruing while the page is closed.
+  const toggleWatch = useCallback(async () => {
+    if (!ADDRESS_RE.test(address)) return;
+    setWatchBusy(true);
+    try {
+      if (watched.length) {
+        await api.unwatch(address);
+        setWatched([]);
+      } else {
+        const res = await api.watch(address, networks);
+        setWatched(res.data.map(w => w.network));
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not update watch");
+    } finally {
+      setWatchBusy(false);
+    }
+  }, [address, networks, watched]);
 
   useEffect(() => {
     try {
@@ -123,8 +149,21 @@ export default function TrackPage() {
                 Load positions
               </button>
             </div>
+            {positions !== null && (
+              <div className="control">
+                <button
+                  className={`button ${watched.length ? "is-success" : "is-link is-outlined"} ${watchBusy ? "is-loading" : ""}`}
+                  onClick={toggleWatch}
+                  title={watched.length
+                    ? "Stop background polling (recorded history is kept)"
+                    : `Record a snapshot every ${pollMins} minutes to build in-range history`}
+                >
+                  {watched.length ? "★ Watching" : "☆ Watch"}
+                </button>
+              </div>
+            )}
           </div>
-          <div className="is-flex" style={{ gap: "1rem" }}>
+          <div className="is-flex is-flex-wrap-wrap" style={{ gap: "1rem" }}>
             {NETWORKS.map(n => (
               <label key={n.key} className="checkbox is-size-7">
                 <input
@@ -135,6 +174,13 @@ export default function TrackPage() {
                 {n.label}
               </label>
             ))}
+            {positions !== null && (
+              <span className="is-size-7 has-text-grey">
+                {watched.length
+                  ? `Watching ${watched.join(", ")} — snapshot every ${pollMins} min`
+                  : "Not watching — history only records when you load this page"}
+              </span>
+            )}
           </div>
         </div>
 
@@ -232,6 +278,13 @@ export default function TrackPage() {
                         {greens >= 3 ? " — outpacing most HODL options" : greens === 2 ? " — keep monitoring" : " — pool or range likely needs work"}
                         {p.entryApprox && " · entry prices approximated"}
                       </p>
+
+                      {/* Recorded history: in-range time + retention trend */}
+                      <PositionHistoryPanel
+                        history={p.history}
+                        watched={watched.includes(p.network)}
+                        pollMins={pollMins}
+                      />
 
                       {/* SMART flags */}
                       {p.smart.map((f, i) => (

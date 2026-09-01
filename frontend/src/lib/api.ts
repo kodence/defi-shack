@@ -1,5 +1,5 @@
 import type { PoolPreset, SimulationConfig, SimulationResult, LivePoolDefault } from "@/types/simulator";
-import type { TrackApiResponse } from "@/types/track";
+import type { TrackApiResponse, WatchedWallet } from "@/types/track";
 
 const API_ROOT = "http://localhost:3001/api";
 const BASE = `${API_ROOT}/simulator`;
@@ -30,6 +30,10 @@ export const api = {
     req<TrackApiResponse>("GET", `/api:/track/${address}${networks?.length ? `?networks=${networks.join(",")}` : ""}`),
   prices:          (ids: string[]) =>
     req<{ prices: Record<string, number>; fetchedAt: string }>("GET", `/api:/prices?ids=${ids.join(",")}`),
+  watch:           (address: string, networks: string[]) =>
+    req<{ data: WatchedWallet[] }>("POST", "/api:/track/watch", { address, networks }),
+  unwatch:         (address: string) =>
+    req<{ data: WatchedWallet[] }>("DELETE", `/api:/track/watch/${address}`),
 };
 
 // ── Formatting ──────────────────────────────────────────────────────────────

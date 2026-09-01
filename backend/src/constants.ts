@@ -50,3 +50,19 @@ export const STABLECOINS = new Set([
 ]);
 
 export const PORT = 3001;
+
+// ── Position history (SQLite snapshots) ──────────────────────────────────────
+// How often the background poller refreshes watched wallets. Each poll costs
+// metered Graph queries per watched wallet, so override with care.
+export const SNAPSHOT_POLL_INTERVAL_MS =
+  Number(process.env.LPSIM_POLL_INTERVAL_MS) > 0
+    ? Number(process.env.LPSIM_POLL_INTERVAL_MS)
+    : 15 * 60 * 1000;
+// Longest gap between snapshots still treated as continuous observation.
+// Anything longer (server down, wallet unwatched) counts as unobserved rather
+// than silently inflating in-range time.
+export const SNAPSHOT_MAX_GAP_SEC = 90 * 60;
+// Debounce so repeated page loads don't write a row each time
+export const SNAPSHOT_MIN_INTERVAL_SEC = 60;
+// Snapshots older than this are pruned
+export const SNAPSHOT_RETENTION_DAYS = 180;
