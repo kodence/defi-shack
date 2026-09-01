@@ -1,18 +1,21 @@
 import { Router, Request, Response } from "express";
 import {
   VALID_TIMEFRAMES, Timeframe, NETWORKS, VALID_NETWORKS, TVL_CEILING,
+  REFERENCE_POSITION_USD,
 } from "../constants";
 import { getCached, setCache } from "../services/cache";
 import {
   fetchTopPools,
   fetchAllPoolDayDatas,
   fetchAllTokenDayDatas,
+  fetchAllPoolTicks,
 } from "../services/subgraph";
+import { computePoolLiquidity } from "../services/poolLiquidity";
 import {
   computeAvgDailyFees,
   computeAvgDailyVolume,
   computeAvgDailyTVL,
-  computeAPR,
+  computeAPRFromSeries,
   computeVolatility,
   computeCorrelation,
   computeFeeToTvl,
@@ -48,7 +51,8 @@ async function fetchPoolsForNetwork(
   const subgraphUrl = config.subgraphUrl;
 
   // Step 1: Fetch top pools, discarding ones whose reported TVL is not credible
-  const pools = (await fetchTopPools(subgraphUrl)).filter(
+  const { pools: allPools, ethPriceUsd } = await fetchTopPools(subgraphUrl);
+  const pools = allPools.filter(
     (p) => parseFloat(p.totalValueLockedUSD) <= TVL_CEILING
   );
 
@@ -70,13 +74,42 @@ async function fetchPoolsForNetwork(
     subgraphUrl
   );
 
-  // Step 5: Compute metrics for each pool
+  // Step 5: Rebuild real TVL from tick liquidity. The subgraph's own TVL
+  // fields drift 2-11x above what positions actually hold, which understates
+  // every APR by the same factor.
+  const tickMap = await fetchAllPoolTicks(poolIds, subgraphUrl);
+
+  // Step 6: Compute metrics for each pool
   return pools.map((pool) => {
     const dayDatas = usableDays(poolDayDatasMap.get(pool.id) || []);
     const avgDailyFees = computeAvgDailyFees(dayDatas);
     const avgDailyVolume = computeAvgDailyVolume(dayDatas);
-    const avgDailyTVL = computeAvgDailyTVL(dayDatas);
-    const apr = computeAPR(dayDatas);
+    const subgraphAvgTVL = computeAvgDailyTVL(dayDatas);
+
+    // Only current liquidity can be reconstructed, but the daily TVL series is
+    // wrong by a roughly constant factor, so rescaling it to the reconstructed
+    // level keeps the day-to-day shape while fixing the level.
+    const tickData = tickMap.get(pool.id);
+    const liq = tickData && !tickData.clipped
+      ? computePoolLiquidity(pool, tickData.ticks, ethPriceUsd)
+      : null;
+    const subgraphCurrentTVL = parseFloat(pool.totalValueLockedUSD);
+    const scale = liq && subgraphCurrentTVL > 0
+      ? liq.tvlUsd / subgraphCurrentTVL
+      : 1;
+
+    const avgDailyTVL = subgraphAvgTVL * scale;
+    const apr = computeAPRFromSeries(dayDatas, scale);
+
+    // Share of liquidity sitting within the active band around spot. Fees are
+    // earned only by that slice, so it is the denominator an in-range LP sees.
+    const activeShare = liq && liq.tvlUsd > 0 ? liq.activeTvlUsd / liq.tvlUsd : null;
+    const activeTvl = activeShare !== null ? avgDailyTVL * activeShare : null;
+    // What a REFERENCE_POSITION_USD deposit sitting in range would earn: it
+    // competes with the in-range liquidity and with itself.
+    const activeApr = activeTvl !== null
+      ? (avgDailyFees / (activeTvl + REFERENCE_POSITION_USD)) * 365 * 100
+      : null;
 
     const volatilityTokenId = getVolatilityTokenId(pool.token0, pool.token1);
     const volatilityData = tokenDayDatasMap.get(volatilityTokenId) || [];
@@ -102,7 +135,10 @@ async function fetchPoolsForNetwork(
       // Averaged over the timeframe, matching the APR denominator. Reporting
       // current TVL here instead leaves the row unable to reconcile.
       tvl: avgDailyTVL,
+      tvlSource: liq ? "liquidity" : "subgraph",
       apr,
+      activeTvl,
+      activeApr,
       avgDailyFees,
       avgDailyVolume,
       priceVolatility,
@@ -119,7 +155,9 @@ router.get("/", async (req: Request, res: Response) => {
   const timeframeParam = parseInt(req.query.timeframe as string, 10);
 
   if (!VALID_TIMEFRAMES.includes(timeframeParam as Timeframe)) {
-    res.status(400).json({ error: "timeframe must be 7, 30, or 90" });
+    res.status(400).json({
+      error: `timeframe must be one of: ${VALID_TIMEFRAMES.join(", ")}`,
+    });
     return;
   }
 

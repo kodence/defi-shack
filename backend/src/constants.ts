@@ -40,8 +40,24 @@ export const TVL_FLOOR = 1_000_000;
 // than this is a subgraph data error (one reports $1.1T). Left in, it dominates
 // a TVL-sorted table.
 export const TVL_CEILING = 50_000_000_000;
+
+// The subgraph's totalValueLocked* fields drift badly (measured 2.3x-11.2x above
+// what LP positions actually hold), so pool TVL is reconstructed from tick
+// liquidity instead. That costs one tick query per pool, bounded as follows.
+export const TICK_PAGE_SIZE = 1000;
+export const TICK_MAX_PAGES = 3;
+export const TICK_CONCURRENCY = 12;
+// Band around spot used for "in-range" liquidity. Only liquidity inside it is
+// realistically earning, so it is the denominator an LP actually experiences.
+export const ACTIVE_BAND_PCT = 0.02;
+// In-range APR is quoted for a reference deposit rather than an infinitesimal
+// one. Where liquidity has drained away from spot the in-range band can hold
+// almost nothing, and dividing by it yields six-figure percentages nobody could
+// actually earn -- your own deposit would become the liquidity. Including it in
+// the denominator is the same dilution the simulator models.
+export const REFERENCE_POSITION_USD = 10_000;
 export const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
-export const VALID_TIMEFRAMES = [7, 30, 90] as const;
+export const VALID_TIMEFRAMES = [7, 14, 30, 90] as const;
 export type Timeframe = (typeof VALID_TIMEFRAMES)[number];
 
 export const STABLECOINS = new Set([

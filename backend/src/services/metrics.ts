@@ -42,9 +42,15 @@ export function computeAvgDailyTVL(dayDatas: SubgraphPoolDayData[]): number {
 // Mean of each day's yield, not mean(fees) / mean(TVL): the ratio of means
 // silently weights high-TVL days more heavily, which skews the result whenever
 // a pool's TVL trends over the window.
-export function computeAPR(dayDatas: SubgraphPoolDayData[]): number {
+// `tvlScale` rescales the subgraph's daily TVL onto the level reconstructed
+// from tick liquidity (see services/poolLiquidity.ts). The daily series has the
+// right shape but the wrong level, so one factor corrects it.
+export function computeAPRFromSeries(
+  dayDatas: SubgraphPoolDayData[],
+  tvlScale = 1
+): number {
   const dailyYields = dayDatas
-    .map((d) => ({ fees: parseFloat(d.feesUSD), tvl: parseFloat(d.tvlUSD) }))
+    .map((d) => ({ fees: parseFloat(d.feesUSD), tvl: parseFloat(d.tvlUSD) * tvlScale }))
     .filter((d) => d.tvl > 0)
     .map((d) => d.fees / d.tvl);
   if (dailyYields.length === 0) return 0;

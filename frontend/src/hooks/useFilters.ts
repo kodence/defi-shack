@@ -67,7 +67,10 @@ export function useFilters(): UseFiltersReturn {
     return (pools: Pool[]) => {
       return pools.filter((pool) => {
         for (const [key, { min, max }] of Object.entries(filters)) {
-          const value = pool[key as SortableColumn] as number;
+          const value = pool[key as SortableColumn] as number | null;
+          if (min === "" && max === "") continue;
+          // A pool with no value for a bounded column cannot be shown to meet it
+          if (value === null || value === undefined) return false;
           if (min !== "" && value < parseFloat(min)) return false;
           if (max !== "" && value > parseFloat(max)) return false;
         }

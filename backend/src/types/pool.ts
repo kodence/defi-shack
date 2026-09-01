@@ -8,7 +8,12 @@ export interface ComputedPool {
   network: string;
   networkId: string;
   tvl: number;
+  // "liquidity" = rebuilt from ticks (trustworthy); "subgraph" = fell back to
+  // the drifting totalValueLocked figure because ticks were unavailable
+  tvlSource: "liquidity" | "subgraph";
   apr: number;
+  activeTvl: number | null;
+  activeApr: number | null;
   avgDailyFees: number;
   avgDailyVolume: number;
   priceVolatility: number;

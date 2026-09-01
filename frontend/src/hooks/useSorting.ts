@@ -38,8 +38,12 @@ export function useSorting(): UseSortingReturn {
             : bVal.localeCompare(aVal);
         }
 
-        const aNum = aVal as number;
-        const bNum = bVal as number;
+        // Columns that can be null (no tick data) always sort to the bottom
+        const aNum = aVal as number | null;
+        const bNum = bVal as number | null;
+        if (aNum === null && bNum === null) return 0;
+        if (aNum === null) return 1;
+        if (bNum === null) return -1;
         return sortDirection === "asc" ? aNum - bNum : bNum - aNum;
       });
     };

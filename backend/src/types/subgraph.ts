@@ -3,14 +3,30 @@
 export interface SubgraphToken {
   id: string;
   symbol: string;
+  decimals: string;
+  derivedETH: string;
 }
 
 export interface SubgraphPool {
   id: string;
   feeTier: string;
   totalValueLockedUSD: string;
+  // Needed to reconstruct what LP positions actually hold: the walk over
+  // liquidityNet is anchored on the active liquidity at the current tick.
+  tick: string | null;
+  liquidity: string;
   token0: SubgraphToken;
   token1: SubgraphToken;
+}
+
+export interface SubgraphTickLite {
+  tickIdx: string;
+  liquidityNet: string;
+}
+
+export interface TopPoolsResult {
+  pools: SubgraphPool[];
+  ethPriceUsd: number;
 }
 
 export interface SubgraphPoolDayData {
@@ -77,6 +93,7 @@ export interface TicksPageQueryResponse {
 
 export interface PoolsQueryResponse {
   pools: SubgraphPool[];
+  bundle: { ethPriceUSD: string } | null;
 }
 
 export interface PoolDayDatasQueryResponse {

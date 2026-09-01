@@ -11,6 +11,8 @@ export type SortableColumn =
   | "apr"
   | "avgDailyFees"
   | "avgDailyVolume"
+  | "activeTvl"
+  | "activeApr"
   | "feeToTvlPct"
   | "volumeCV"
   | "correlation"
@@ -27,9 +29,11 @@ export const COLUMNS: ColumnDef[] = [
   { key: "exchange", label: "Exchange", filterable: false },
   { key: "network", label: "Network", filterable: false },
   { key: "tvl", label: "Avg TVL", filterable: true },
-  { key: "apr", label: "Avg APR", filterable: true },
+  { key: "apr", label: "Pool APR", filterable: true },
+  { key: "activeApr", label: "In-Range APR ($10k)", filterable: true },
   { key: "avgDailyFees", label: "Avg Daily Fees", filterable: true },
   { key: "avgDailyVolume", label: "Avg Daily Volume", filterable: true },
+  { key: "activeTvl", label: "In-Range TVL", filterable: true },
   { key: "feeToTvlPct", label: "Fee/TVL", filterable: true },
   { key: "volumeCV", label: "Vol CV", filterable: true },
   { key: "correlation", label: "Correlation", filterable: true },
@@ -39,8 +43,11 @@ export const COLUMNS: ColumnDef[] = [
 // FATE framework thresholds: APR 30–500%, TVL ≥ $1M, volatility < 15%.
 // Correlation is deliberately NOT auto-filtered (the doc's flow checks it
 // manually) — a stable-quoted pool reports 0 and would always be excluded.
+// The APR band applies to In-Range APR, not pool-wide APR: the framework's
+// numbers describe what a position inside its range earns, and pool-wide APR
+// runs roughly an order of magnitude lower, so the band would never match.
 export const FATE_FILTERS: Record<string, { min: string; max: string }> = {
-  apr: { min: "30", max: "500" },
+  activeApr: { min: "30", max: "500" },
   tvl: { min: "1000000", max: "" },
   priceVolatility: { min: "", max: "15" },
 };
@@ -48,7 +55,7 @@ export const FATE_FILTERS: Record<string, { min: string; max: string }> = {
 // Fee-to-TVL ratio considered "actively traded" by the FATE guidance
 export const FEE_TO_TVL_TARGET = 0.059;
 
-export const TIMEFRAMES = [7, 30, 90] as const;
+export const TIMEFRAMES = [7, 14, 30, 90] as const;
 
 export const NETWORKS = [
   { key: "ethereum", label: "Ethereum" },

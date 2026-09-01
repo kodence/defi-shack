@@ -33,7 +33,7 @@ The Graph (Uniswap V3 subgraph per network)
   → backend fetches top 500 pools by TVL, poolDayDatas, tokenDayDatas
   → backend computes metrics (APR, volatility, correlation, fees, volume)
   → backend caches per (timeframe, networks) for 5 minutes
-  → GET /api/pools?timeframe={7|30|90}&networks={csv}
+  → GET /api/pools?timeframe={7|14|30|90}&networks={csv}
   → frontend renders table, applies client-side filtering/sorting/pagination
 ```
 
@@ -74,13 +74,14 @@ Backend `ComputedPool` (`backend/src/types/pool.ts`) ↔ frontend `Pool` (`front
 ## Key Domain Rules
 
 - **Metric definitions were frozen for V1** and deliberately revised once (see APR and day-data hygiene below) after the table was found not to reconcile: TVL was reported as a current value while APR divided by a windowed average. Treat further changes the same way — they feed V2 simulation inputs, so revise deliberately and update this file. Newer metrics (`feeToTvlPct`, `volumeCV`, `correlation7d/30d`) are additive fields computed alongside, never redefinitions.
-- **FATE filter preset** (`FATE_FILTERS` in `frontend/src/utils/constants.ts`): APR 30–500%, TVL ≥ $1M, volatility < 15%. Correlation is intentionally not auto-filtered — stable-quoted pools report correlation 0 (constant stablecoin price) and would always be excluded.
+- **FATE filter preset** (`FATE_FILTERS` in `frontend/src/utils/constants.ts`): **In-Range APR** 30–500%, TVL ≥ $1M, volatility < 15%. The band is applied to `activeApr`, not `apr` — the framework's numbers describe what a position inside its range earns. Applied to pool-wide APR the preset matched zero pools on every network; against in-range APR it matches ~38 on Ethereum alone. Correlation is intentionally not auto-filtered — stable-quoted pools report correlation 0 (constant stablecoin price) and would always be excluded.
 - **In-range time** is time-weighted over recorded snapshots: each snapshot's state holds until the next (step function), and gaps longer than `SNAPSHOT_MAX_GAP_SEC` (90 min) count as *unobserved* rather than being attributed to the last known state — so downtime lowers `coverage` instead of inflating in-range time. `npm run verify:history` (in `backend/`) checks this math against synthetic series.
 - **Volatility token selection:** if either token is a known stablecoin, use the other token's price; if neither, use token0
 - **Stablecoins:** USDC, USDT, DAI, FRAX, LUSD, crvUSD
 - **APR formula:** `mean(dayFees / dayTVL) * 365 * 100` — the mean of each day's yield, not `mean(fees) / mean(TVL)`. The ratio of means weights high-TVL days more heavily and skews pools whose TVL trends across the window. Fee APR only, excludes IL.
 - **Day-data hygiene** (`usableDays` in `services/metrics.ts`, applied once in `routes/pools.ts` so every metric shares one sample): the current UTC day is excluded because it is still accumulating and averaging it as a whole day understates every rate, worst on short timeframes; days reporting TVL above `TVL_CEILING` ($50B) are excluded because the subgraph occasionally emits a corrupt figure (one pool reported $9.9T on a single day against a $1.7M median, which alone produced a $397B 90-day average). Pools whose *current* TVL exceeds the ceiling are dropped entirely.
-- **The `tvl` field is the timeframe average**, not current TVL — the same denominator the APR is measured against, so a row reconciles: `avgDailyFees / tvl * 365 * 100` reproduces `apr` to ~0.004pp median. Displayed as **Avg TVL**.
+- **`tvl` is rebuilt from tick liquidity, not read from the subgraph.** The subgraph's `totalValueLocked*` fields drift far above what LP positions actually hold — measured 2.33x on WETH/USDT 0.3%, 4.96x on WBTC/WETH 0.3%, 11.20x on USDC/WETH 0.3% — which understated every APR by the same factor. `services/poolLiquidity.ts` walks `liquidityNet` outward from the current tick (anchored on `pool.liquidity`) and values the token amounts each tick range holds. The reconstruction self-validates: `sum(liquidityNet) == 0` and a bottom-up cumulative walk reproduces `pool.liquidity` exactly. Only *current* liquidity can be rebuilt, so the daily TVL series is rescaled by `reconstructed / subgraphCurrent` — right shape, corrected level. Falls back to the subgraph figure when ticks are unavailable, flagged by `tvlSource: "subgraph"` (~25 of 286 pools) and marked with `*` in the table.
+- **Two APRs, and they answer different questions.** `apr` spreads fees across *all* liquidity including positions parked far out of range earning nothing. `activeApr` divides by the liquidity within `ACTIVE_BAND_PCT` (2%) of spot **plus `REFERENCE_POSITION_USD` ($10k)** — what a real deposit sitting in range would earn, diluted by itself. The reference deposit is not cosmetic: where liquidity has drained away from spot the band can hold nothing, and without it the metric returns six-figure percentages nobody could earn (max fell from 311,825% to 2,506% once added). `activeApr` is the number comparable to Metrix Finance, and it is what the FATE band is written against.
 - **Correlation:** Pearson correlation of daily USD prices for both tokens, aligned by date
 
 ## Supported Networks

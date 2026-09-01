@@ -34,10 +34,26 @@ export default function PoolRow({ pool, dimmed, selected, onSelect }: PoolRowPro
         {networkIcon && <img src={networkIcon} alt="" className="cell-icon" />}
         {pool.network}
       </td>
-      <td>{formatUSD(pool.tvl)}</td>
-      <td>{formatPercent(pool.apr)}</td>
+      <td title={pool.tvlSource === "subgraph"
+        ? "Tick data unavailable - falls back to the subgraph's reported TVL, which runs high"
+        : "Rebuilt from tick liquidity"}>
+        {formatUSD(pool.tvl)}
+        {pool.tvlSource === "subgraph" && <span className="has-text-grey"> *</span>}
+      </td>
+      <td title="Fees spread across all liquidity, including positions far out of range">
+        {formatPercent(pool.apr)}
+      </td>
+      <td
+        title="What a $10,000 position sitting within 2% of spot would earn, after diluting the liquidity already there"
+        className={pool.activeApr !== null && pool.activeApr >= 30 ? "has-text-weight-semibold" : undefined}
+      >
+        {pool.activeApr === null ? "-" : formatPercent(pool.activeApr)}
+      </td>
       <td>{formatUSD(pool.avgDailyFees)}</td>
       <td>{formatUSD(pool.avgDailyVolume)}</td>
+      <td title="Liquidity sitting within 2% of spot">
+        {pool.activeTvl === null ? "-" : formatUSD(pool.activeTvl)}
+      </td>
       <td
         title="Avg daily fees ÷ avg TVL — FATE targets ≥ 0.059% for actively traded pools"
         style={pool.feeToTvlPct >= FEE_TO_TVL_TARGET ? { color: "hsl(141, 53%, 41%)", fontWeight: 600 } : undefined}
