@@ -1,8 +1,8 @@
 export interface PoolPreset {
   id:               string;
   name:             string;
-  token0Symbol:     string;
-  token1Symbol:     string;
+  token0Symbol:     string;   // base
+  token1Symbol:     string;   // quote
   feeTier:          number;
   feeLabel:         string;
   defaultPrice:     number;
@@ -12,31 +12,81 @@ export interface PoolPreset {
   annualVolatility: number;
 }
 
+export type PoolType = "crypto-crypto" | "crypto-stable" | "stable-stable";
+
+export interface SimPoolInfo {
+  source:           "preset" | "live";
+  id:               string;
+  network?:         string;
+  networkName?:     string;
+  name:             string;
+  baseSymbol:       string;
+  quoteSymbol:      string;
+  feeTier:          number;
+  feeLabel:         string;
+  tvlUsd:           number;
+  quoteUsd:         number;
+  baseUsd:          number;
+  annualVolatility: number;
+  poolType:         PoolType;
+  invertible:       boolean;
+  baseToken?:       0 | 1;
+}
+
+export type CalcMethod = "current" | "peak" | "average" | "custom";
+
+export interface DlScenarioInput {
+  basePct:  number;
+  quotePct: number;
+}
+
 export interface SimulationConfig {
-  presetId:       string;
+  presetId?:      string;
+  network?:       string;
+  poolId?:        string;
+  baseToken?:     0 | 1;
+
   currentPrice:   number;
   volume24hUsd:   number;
   lowerPrice:     number;
   upperPrice:     number;
   investmentUsd:  number;
   days?:          number;
+
+  calcMethod?:      CalcMethod;
+  customCalcPrice?: number;
+  volumeWindow?:    7 | 21 | 30;
+  trimSpikes?:      boolean;
+
+  dlScenarios?:   DlScenarioInput[];
 }
 
 export interface PositionMetrics {
-  liquidity:         number;
-  token0Amount:      number;
-  token1Amount:      number;
-  token0ValueUsd:    number;
-  token1ValueUsd:    number;
-  positionValueUsd:  number;
-  estimatedApr:      number;
-  dailyFeesUsd:      number;
-  capitalEfficiency: number;
-  ilAtLower:         number;
-  ilAtUpper:         number;
-  breakevenDays:     number;
-  inRangeProb30d:    number;
-  token0Pct:         number;
+  liquidity:          number;
+  baseAmount:         number;
+  quoteAmount:        number;
+  baseValueUsd:       number;
+  quoteValueUsd:      number;
+  positionValueUsd:   number;
+  estimatedApr:       number;
+  dailyFeesUsd:       number;
+  capitalEfficiency:  number;
+  ilAtLower:          number;
+  ilAtUpper:          number;
+  breakevenDays:      number;
+  inRangeProb30d:     number;
+  basePct:            number;
+}
+
+export interface AprBreakdown {
+  method:             CalcMethod;
+  volumeWindow:       number;
+  volumeBasisUsd:     number;
+  trimmedDays:        number;
+  realisticApr:       number;
+  worstCaseApr:       number;
+  worstCaseVolumeUsd: number;
+  fallbackUniform:    boolean;
 }
 
 export interface ChartPoint {
@@ -54,6 +104,7 @@ export interface ScenarioRow {
   ilPct:          number;
   fees30dUsd:     number;
   netPnlUsd:      number;
+  recoveryDays:   number;
   inRange:        boolean;
   isCurrent:      boolean;
 }
@@ -83,21 +134,63 @@ export interface AprHistoryResult {
 }
 
 export interface PriceCandle {
-  day:    number;
-  open:   number;
-  high:   number;
-  low:    number;
-  close:  number;
-  volume: number;
+  day:            number;
+  timestampUnix?: number;
+  open:           number;
+  high:           number;
+  low:            number;
+  close:          number;
+  volume:         number;
+}
+
+export interface LiquidityBucket {
+  price:   number;
+  activeL: number;
+}
+
+export interface LiquidityDistribution {
+  buckets:      LiquidityBucket[];
+  currentPrice: number;
+  calcPrice:    number;
+  clipped:      boolean;
+}
+
+export interface DivergenceScenario {
+  label:             string;
+  source:            "standard" | "historical" | "custom";
+  basePct:           number;
+  quotePct:          number;
+  newPrice:          number;
+  inRange:           boolean;
+  positionValueUsd:  number;
+  hodlValueUsd:      number;
+  divergenceLossUsd: number;
+  divergenceLossPct: number;
+  recoveryDays:      number;
+  verdict:           "fast" | "ok" | "slow";
+}
+
+export interface DivergenceResult {
+  poolType:    PoolType;
+  horizonDays: number;
+  scenarios:   DivergenceScenario[];
 }
 
 export interface SimulationResult {
-  preset:       PoolPreset;
+  pool:         SimPoolInfo;
   config:       SimulationConfig;
   metrics:      PositionMetrics;
+  aprBreakdown: AprBreakdown;
   rangeChart:   ChartPoint[];
   scenarios:    ScenarioRow[];
   tvlHistory:   TvlDayData[];
   aprHistory:   AprHistoryResult;
   priceHistory: PriceCandle[];
+  liquidity:    LiquidityDistribution | null;
+  divergence:   DivergenceResult;
+}
+
+export interface LivePoolDefault {
+  config: SimulationConfig;
+  pool:   SimPoolInfo;
 }

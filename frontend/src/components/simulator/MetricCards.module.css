@@ -26,7 +26,12 @@
 .red::before    { background: var(--red); }
 .purple::before { background: var(--purple); }
 
-.label { font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--tm); }
+.label { font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--tm); display: flex; align-items: center; gap: 5px; }
+.tag {
+  padding: 0 5px; border-radius: 8px; font-size: 8px; font-weight: 600;
+  background: var(--bg-elevated); border: 1px solid var(--border); color: var(--ts);
+  text-transform: none; letter-spacing: normal;
+}
 .value { font-size: 24px; font-weight: 700; letter-spacing: -.5px; line-height: 1.1; }
 .green .value  { color: var(--green); }
 .blue .value   { color: var(--blue); }

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Pool } from "@/types/pool";
 import { formatUSD, formatPercent, formatCorrelation } from "@/utils/format";
 import { EXCHANGE_ICONS, NETWORK_ICONS } from "@/utils/constants";
@@ -39,6 +40,15 @@ export default function PoolRow({ pool, dimmed, selected, onSelect }: PoolRowPro
       <td>{formatUSD(pool.avgDailyVolume)}</td>
       <td>{formatCorrelation(pool.correlation)}</td>
       <td>{formatPercent(pool.priceVolatility)}</td>
+      <td onClick={(e) => e.stopPropagation()}>
+        <Link
+          className="button is-small is-link is-outlined"
+          href={`/simulator?network=${pool.networkId}&pool=${pool.id}`}
+          title="Simulate a position in this pool"
+        >
+          Simulate
+        </Link>
+      </td>
     </tr>
   );
 }

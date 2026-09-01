@@ -8,7 +8,7 @@ import {
   TokenDayDatasQueryResponse,
 } from "../types/subgraph";
 
-async function querySubgraph<T>(query: string, subgraphUrl: string = NETWORKS.ethereum.subgraphUrl): Promise<T> {
+export async function querySubgraph<T>(query: string, subgraphUrl: string = NETWORKS.ethereum.subgraphUrl): Promise<T> {
   const res = await fetch(subgraphUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

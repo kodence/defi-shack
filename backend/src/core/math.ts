@@ -9,6 +9,16 @@ export const tickToPrice  = (tick: number): number => Math.pow(1.0001, tick);
 export const priceToTick  = (price: number): number =>
   Math.floor(Math.log(price) / Math.log(1.0001));
 
+export const MIN_TICK = -887272;
+export const MAX_TICK =  887272;
+
+// Adjusted (human) price P = token1 per token0. Raw on-chain price differs by
+// a 10^(dec1-dec0) factor, so tick = log_1.0001(P · 10^(dec1-dec0)).
+export const adjPriceToTick = (price: number, dec0: number, dec1: number): number =>
+  priceToTick(price * Math.pow(10, dec1 - dec0));
+export const tickToAdjPrice = (tick: number, dec0: number, dec1: number): number =>
+  tickToPrice(tick) * Math.pow(10, dec0 - dec1);
+
 // ── BigInt helpers ────────────────────────────────────────────────────────────
 export const uint256Delta = (end: bigint, start: bigint): bigint =>
   ((end - start) + UINT256_MOD) % UINT256_MOD;
@@ -81,12 +91,26 @@ export function estimateTotalL(tvlUsd: number, price: number, rangePct = 0.25): 
 }
 
 // ── Volume-based APR ──────────────────────────────────────────────────────────
+// Ltotal is the competing liquidity at the calculation price; the position's own
+// liquidity is added to the denominator so large deposits visibly dilute APR.
 export function aprFromVolume(
   vol24h: number, feeTier: number,
   Lpos: number, Ltotal: number, posVal: number,
 ): number {
-  if (posVal <= 0 || Ltotal <= 0) return 0;
-  return (vol24h * (feeTier / 1e6) * (Lpos / Ltotal) / posVal) * 365;
+  if (posVal <= 0 || Ltotal + Lpos <= 0) return 0;
+  return (vol24h * (feeTier / 1e6) * (Lpos / (Ltotal + Lpos)) / posVal) * 365;
+}
+
+// ── Annualized volatility from daily closes (stddev of log returns) ───────────
+export function annualizedVolFromCloses(closes: number[], fallback = 0.8): number {
+  const rets: number[] = [];
+  for (let i = 1; i < closes.length; i++) {
+    if (closes[i] > 0 && closes[i - 1] > 0) rets.push(Math.log(closes[i] / closes[i - 1]));
+  }
+  if (rets.length < 7) return fallback;
+  const mean = rets.reduce((s, r) => s + r, 0) / rets.length;
+  const varr = rets.reduce((s, r) => s + (r - mean) ** 2, 0) / (rets.length - 1);
+  return Math.sqrt(varr) * Math.sqrt(365);
 }
 
 // ── GBM in-range probability ──────────────────────────────────────────────────

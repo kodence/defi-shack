@@ -1,0 +1,9 @@
+.card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; }
+.title { font-size: 12px; font-weight: 600; color: var(--ts); margin-bottom: 10px; display: flex; align-items: center; gap: 7px; }
+.pill  { font-size: 10px; padding: 1px 7px; border-radius: 10px; background: var(--bg-elevated); border: 1px solid var(--border); color: var(--tm); font-weight: 500; }
+.svg   { display: block; width: 100%; overflow: visible; }
+.legend { display: flex; gap: 14px; margin-top: 8px; flex-wrap: wrap; align-items: center; }
+.li  { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--ts); }
+.sw  { width: 12px; height: 8px; border-radius: 2px; flex-shrink: 0; display: inline-block; }
+.ld  { width: 18px; height: 0; border-top: 2px dashed; flex-shrink: 0; display: inline-block; }
+.hint { margin-left: auto; font-size: 10px; color: var(--tm); }

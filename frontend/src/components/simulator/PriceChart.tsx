@@ -7,6 +7,7 @@ import styles from "./PriceChart.module.css";
 interface Props {
   candles:    PriceCandle[];
   cfg:        SimulationConfig;
+  live:       boolean;
   tvlHistory: TvlDayData[];
   aprHistory: AprHistoryResult;
   onChange:   (patch: Partial<SimulationConfig>) => void;
@@ -41,7 +42,7 @@ function OverlayLabel({ x, y, label, fontSize = 8, anchor = "start" }: {
   );
 }
 
-export default function PriceChart({ candles, cfg, tvlHistory, aprHistory, onChange }: Props) {
+export default function PriceChart({ candles, cfg, live, tvlHistory, aprHistory, onChange }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState<DragTarget>(null);
@@ -158,7 +159,9 @@ export default function PriceChart({ candles, cfg, tvlHistory, aprHistory, onCha
     if (section === "price" || section === "vol") {
       const up = c.close >= c.open;
       const daysAgo = N - 1 - col;
-      const date = new Date(Date.now() - daysAgo * 86_400_000);
+      const date = c.timestampUnix
+        ? new Date(c.timestampUnix * 1000)
+        : new Date(Date.now() - daysAgo * 86_400_000);
       const dateStr = date.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
       lines.push(`${dateStr} · ${up ? "Up" : "Down"}`);
       lines.push(`O: ${fmtPrice(c.open)}  H: ${fmtPrice(c.high)}`);
@@ -276,7 +279,9 @@ export default function PriceChart({ candles, cfg, tvlHistory, aprHistory, onCha
     <div className={styles.card} ref={wrapRef} style={{ position: "relative" }}>
       <div className={styles.title}>
         Price chart
-        <span className={styles.pill}>{cfg.days ?? 90}-day synthetic · OHLCV</span>
+        <span className={styles.pill}>
+          {candles.length}-day {live ? "live" : "synthetic"} · OHLCV
+        </span>
         <span className={styles.daySelector}>
           {[7, 30, 90, 365].map(d => (
             <button

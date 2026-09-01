@@ -6,6 +6,7 @@ export interface Pool {
   feeTier: number;
   exchange: string;
   network: string;
+  networkId: string;
   tvl: number;
   apr: number;
   avgDailyFees: number;

@@ -43,6 +43,7 @@
 .main::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
 .chartRow  { display: grid; grid-template-columns: 9fr 4fr; gap: 14px; }
+.leftCol   { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 .rightCol  { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 .loadingMsg { color: var(--tm); font-size: 13px; padding: 40px 0; text-align: center; }
 

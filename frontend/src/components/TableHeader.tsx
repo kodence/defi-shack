@@ -62,6 +62,7 @@ export default function TableHeader({
           </th>
         );
       })}
+      <th aria-label="Actions" />
     </tr>
   );
 }

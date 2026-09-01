@@ -25,6 +25,56 @@ export interface SubgraphTokenDayData {
   priceUSD: string;
 }
 
+// ── Simulator (live pool snapshot) ───────────────────────────────────────────
+
+export interface SubgraphTokenFull {
+  id: string;
+  symbol: string;
+  decimals: string;
+  derivedETH: string;
+}
+
+export interface SubgraphPoolFull {
+  id: string;
+  feeTier: string;
+  tick: string | null;
+  liquidity: string;
+  sqrtPrice: string;
+  totalValueLockedUSD: string;
+  token0: SubgraphTokenFull;
+  token1: SubgraphTokenFull;
+}
+
+export interface SubgraphTick {
+  tickIdx: string;
+  liquidityNet: string;
+}
+
+export interface SubgraphPoolDayDataFull extends SubgraphPoolDayData {
+  open: string;
+  high: string;
+  low: string;
+  close: string;
+  token0Price: string;
+}
+
+export interface PoolMetaQueryResponse {
+  pool: SubgraphPoolFull | null;
+  bundle: { ethPriceUSD: string } | null;
+}
+
+export interface PoolSnapshotQueryResponse {
+  pool: { tick: string | null; liquidity: string } | null;
+  ticks: SubgraphTick[];
+  poolDayDatas: SubgraphPoolDayDataFull[];
+  t0: SubgraphTokenDayData[];
+  t1: SubgraphTokenDayData[];
+}
+
+export interface TicksPageQueryResponse {
+  ticks: SubgraphTick[];
+}
+
 export interface PoolsQueryResponse {
   pools: SubgraphPool[];
 }

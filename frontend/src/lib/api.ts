@@ -1,4 +1,4 @@
-import type { PoolPreset, SimulationConfig, SimulationResult } from "@/types/simulator";
+import type { PoolPreset, SimulationConfig, SimulationResult, LivePoolDefault } from "@/types/simulator";
 
 const BASE = "http://localhost:3001/api/simulator";
 
@@ -18,6 +18,8 @@ async function req<T>(method: string, path: string, body?: unknown): Promise<T> 
 export const api = {
   getPresets:      ()                          => req<PoolPreset[]>       ("GET",  "/presets"),
   getDefault:      (id: string)                => req<SimulationConfig>   ("GET",  `/presets/${id}/default`),
+  getLiveDefault:  (network: string, poolId: string, base?: 0 | 1) =>
+    req<LivePoolDefault>("GET", `/pool/${network}/${poolId}/default${base !== undefined ? `?base=${base}` : ""}`),
   simulate:        (cfg: SimulationConfig)     => req<SimulationResult>   ("POST", "/simulate", cfg),
 };
 

@@ -88,6 +88,7 @@ async function fetchPoolsForNetwork(
       feeTier: parseInt(pool.feeTier, 10),
       exchange: config.exchange,
       network: config.name,
+      networkId: networkKey,
       tvl: parseFloat(pool.totalValueLockedUSD),
       apr,
       avgDailyFees,

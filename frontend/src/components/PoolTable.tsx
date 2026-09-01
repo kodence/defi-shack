@@ -121,7 +121,7 @@ export default function PoolTable({ pools, hideFiltered }: PoolTableProps) {
             })}
             {rowsToRender.length === 0 && (
               <tr>
-                <td colSpan={9} className="has-text-centered">
+                <td colSpan={10} className="has-text-centered">
                   No pools match the current filters.
                 </td>
               </tr>

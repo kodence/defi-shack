@@ -20,6 +20,22 @@
 .feeTag { padding: 2px 7px; border-radius: 4px; font-size: 10px; font-weight: 600; background: var(--amber-bg); color: var(--amber); border: 1px solid rgba(227,179,65,.3); }
 .volLbl { font-size: 10px; color: var(--tm); }
 .divider { height: 1px; background: var(--border); margin: 0 -14px; }
+.liveCard {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 10px 11px; background: var(--bg-card);
+  border: 1px solid var(--border); border-radius: 8px;
+}
+.liveName { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 600; color: var(--tx); }
+.liveMeta { display: flex; gap: 10px; flex-wrap: wrap; font-size: 10px; color: var(--tm); }
+.backLink { font-size: 10px; color: var(--blue); text-decoration: none; }
+.backLink:hover { text-decoration: underline; }
+.flipBtn {
+  margin-left: 6px; padding: 1px 7px; border-radius: 10px;
+  border: 1px solid var(--border); background: var(--bg-card);
+  color: var(--blue); font-size: 9px; font-weight: 600; cursor: pointer;
+  text-transform: none; letter-spacing: normal;
+}
+.flipBtn:hover { border-color: var(--blue); background: var(--blue-bg); }
 .formStack { display: flex; flex-direction: column; gap: 9px; }
 .fg { display: flex; flex-direction: column; gap: 5px; }
 .fl { font-size: 10px; font-weight: 600; color: var(--tm); letter-spacing: .05em; text-transform: uppercase; }
