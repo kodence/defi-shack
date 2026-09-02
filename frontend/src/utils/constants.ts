@@ -13,8 +13,6 @@ export type SortableColumn =
   | "avgDailyVolume"
   | "activeTvl"
   | "activeApr"
-  | "liveActiveTvl"
-  | "liveActiveApr"
   | "feeToTvlPct"
   | "volumeCV"
   | "correlation"
@@ -35,20 +33,18 @@ export const COLUMNS: ColumnDef[] = [
   { key: "poolName", label: "Pool Name", filterable: false },
   { key: "exchange", label: "Exchange", filterable: false },
   { key: "network", label: "Network", filterable: false },
-  { key: "tvl", label: "Avg TVL", filterable: true },
+  { key: "tvl", label: "TVL", filterable: true },
   // Fees spread over all liquidity, most of it out of range. The in-range
   // columns are the actionable ones, so this is off unless asked for.
   { key: "apr", label: "Pool APR", filterable: true, defaultHidden: true },
-  { key: "activeApr", label: "In-Range APR (avg)", filterable: true },
-  { key: "liveActiveApr", label: "In-Range APR (now)", filterable: true },
-  { key: "avgDailyFees", label: "Avg Daily Fees", filterable: true },
-  { key: "avgDailyVolume", label: "Avg Daily Volume", filterable: true },
-  { key: "activeTvl", label: "In-Range TVL (avg)", filterable: true },
-  { key: "liveActiveTvl", label: "In-Range TVL (now)", filterable: true },
+  { key: "activeApr", label: "In-Range APR", filterable: true },
+  { key: "avgDailyFees", label: "Daily Fees", filterable: true },
+  { key: "avgDailyVolume", label: "Daily Vol", filterable: true },
+  { key: "activeTvl", label: "In-Range TVL", filterable: true },
   { key: "feeToTvlPct", label: "Fee/TVL", filterable: true },
   { key: "volumeCV", label: "Vol CV", filterable: true },
   { key: "correlation", label: "Correlation", filterable: true },
-  { key: "priceVolatility", label: "Price Volatility", filterable: true },
+  { key: "priceVolatility", label: "Volatility", filterable: true },
 ];
 
 // FATE framework thresholds: APR 30–500%, TVL ≥ $1M, volatility < 15%.

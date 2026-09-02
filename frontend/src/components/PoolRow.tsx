@@ -58,18 +58,10 @@ export default function PoolRow({ pool, dimmed, selected, show, onSelect }: Pool
       )}
       {show("activeApr") && (
         <td
-          title="What a $10,000 position within 2% of spot would have earned against the window's average in-range liquidity"
+          title="What a $10,000 position within 2% of spot would have earned, against the in-range liquidity averaged over the timeframe"
           className={pool.activeApr !== null && pool.activeApr >= 30 ? "has-text-weight-semibold" : undefined}
         >
           {pool.activeApr === null ? "-" : formatPercent(pool.activeApr)}
-        </td>
-      )}
-      {show("liveActiveApr") && (
-        <td
-          title="Same, measured against today's in-range liquidity rather than the window average - the basis Metrix Finance quotes"
-          className={pool.liveActiveApr !== null && pool.liveActiveApr >= 30 ? "has-text-weight-semibold" : undefined}
-        >
-          {pool.liveActiveApr === null ? "-" : formatPercent(pool.liveActiveApr)}
         </td>
       )}
       {show("avgDailyFees") && (
@@ -79,13 +71,8 @@ export default function PoolRow({ pool, dimmed, selected, show, onSelect }: Pool
         <td>{formatUSD(pool.avgDailyVolume)}</td>
       )}
       {show("activeTvl") && (
-        <td title="Liquidity within 2% of spot, averaged over the timeframe">
+        <td title="Liquidity within 2% of spot, averaged over the timeframe - the competition an in-range position faces">
           {pool.activeTvl === null ? "-" : formatUSD(pool.activeTvl)}
-        </td>
-      )}
-      {show("liveActiveTvl") && (
-        <td title="Liquidity within 2% of spot right now - what a deposit would compete with today. Does not change with the timeframe.">
-          {pool.liveActiveTvl === null ? "-" : formatUSD(pool.liveActiveTvl)}
         </td>
       )}
       {show("feeToTvlPct") && (
