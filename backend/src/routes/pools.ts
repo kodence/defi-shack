@@ -1,7 +1,6 @@
 import { Router, Request, Response } from "express";
 import {
   VALID_TIMEFRAMES, Timeframe, NETWORKS, VALID_NETWORKS, TVL_CEILING,
-  REFERENCE_POSITION_USD,
 } from "../constants";
 import { getCached, setCache } from "../services/cache";
 import {
@@ -101,25 +100,6 @@ async function fetchPoolsForNetwork(
     const avgDailyTVL = subgraphAvgTVL * scale;
     const apr = computeAPRFromSeries(dayDatas, scale);
 
-    // Share of liquidity sitting within the active band around spot. Fees are
-    // earned only by that slice, so it is the denominator an in-range LP sees.
-    const activeShare = liq && liq.tvlUsd > 0 ? liq.activeTvlUsd / liq.tvlUsd : null;
-    const activeTvl = activeShare !== null ? avgDailyTVL * activeShare : null;
-    // What a REFERENCE_POSITION_USD deposit sitting in range would earn: it
-    // competes with the in-range liquidity and with itself.
-    const activeApr = activeTvl !== null
-      ? (avgDailyFees / (activeTvl + REFERENCE_POSITION_USD)) * 365 * 100
-      : null;
-
-    // The same band measured on today's liquidity rather than averaged over the
-    // window: what a deposit would actually compete with right now, and the
-    // basis Metrix Finance quotes. Its denominator does not move with the
-    // timeframe, so only the fee numerator changes between windows.
-    const liveActiveTvl = liq ? liq.activeTvlUsd : null;
-    const liveActiveApr = liveActiveTvl !== null
-      ? (avgDailyFees / (liveActiveTvl + REFERENCE_POSITION_USD)) * 365 * 100
-      : null;
-
     const volatilityTokenId = getVolatilityTokenId(pool.token0, pool.token1);
     const volatilityData = tokenDayDatasMap.get(volatilityTokenId) || [];
     const priceVolatility = computeVolatility(volatilityData);
@@ -146,10 +126,6 @@ async function fetchPoolsForNetwork(
       tvl: avgDailyTVL,
       tvlSource: liq ? "liquidity" : "subgraph",
       apr,
-      activeTvl,
-      activeApr,
-      liveActiveTvl,
-      liveActiveApr,
       avgDailyFees,
       avgDailyVolume,
       priceVolatility,

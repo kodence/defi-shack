@@ -1,4 +1,3 @@
-import { ACTIVE_BAND_PCT } from "../constants";
 import { SubgraphPool, SubgraphTickLite } from "../types/subgraph";
 
 // Reconstructs what a pool's liquidity providers actually hold.
@@ -12,7 +11,6 @@ import { SubgraphPool, SubgraphTickLite } from "../types/subgraph";
 
 export interface PoolLiquidityStats {
   tvlUsd: number;        // value held across every tick range
-  activeTvlUsd: number;  // value within ACTIVE_BAND_PCT of spot
   priceToken1PerToken0: number;
 }
 
@@ -85,22 +83,11 @@ export function computePoolLiquidity(
   let tvlUsd = 0;
   for (const s of segments) tvlUsd += segmentUsd(s.lower, s.upper, s.liquidity);
 
-  // Same sum, restricted to the band around spot
-  const tickOffset = Math.log(1 + ACTIVE_BAND_PCT) / Math.log(1.0001);
-  const bandLo = current - tickOffset;
-  const bandHi = current + tickOffset;
-  let activeTvlUsd = 0;
-  for (const s of segments) {
-    const lo = Math.max(s.lower, bandLo);
-    const hi = Math.min(s.upper, bandHi);
-    if (hi > lo) activeTvlUsd += segmentUsd(lo, hi, s.liquidity);
-  }
 
   if (!isFinite(tvlUsd) || tvlUsd <= 0) return null;
 
   return {
     tvlUsd,
-    activeTvlUsd,
     priceToken1PerToken0: Math.pow(1.0001, current) * Math.pow(10, dec0 - dec1),
   };
 }

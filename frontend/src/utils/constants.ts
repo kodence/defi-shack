@@ -11,8 +11,6 @@ export type SortableColumn =
   | "apr"
   | "avgDailyFees"
   | "avgDailyVolume"
-  | "activeTvl"
-  | "activeApr"
   | "feeToTvlPct"
   | "volumeCV"
   | "correlation"
@@ -34,27 +32,25 @@ export const COLUMNS: ColumnDef[] = [
   { key: "exchange", label: "Exchange", filterable: false },
   { key: "network", label: "Network", filterable: false },
   { key: "tvl", label: "TVL", filterable: true },
-  // Fees spread over all liquidity, most of it out of range. The in-range
-  // columns are the actionable ones, so this is off unless asked for.
-  { key: "apr", label: "Pool APR", filterable: true, defaultHidden: true },
-  { key: "activeApr", label: "In-Range APR", filterable: true },
+  { key: "apr", label: "APR", filterable: true },
   { key: "avgDailyFees", label: "Daily Fees", filterable: true },
   { key: "avgDailyVolume", label: "Daily Vol", filterable: true },
-  { key: "activeTvl", label: "In-Range TVL", filterable: true },
   { key: "feeToTvlPct", label: "Fee/TVL", filterable: true },
   { key: "volumeCV", label: "Vol CV", filterable: true },
   { key: "correlation", label: "Correlation", filterable: true },
   { key: "priceVolatility", label: "Volatility", filterable: true },
 ];
 
-// FATE framework thresholds: APR 30–500%, TVL ≥ $1M, volatility < 15%.
+// FATE framework thresholds: APR 10–100%, TVL ≥ $1M, volatility < 15%.
 // Correlation is deliberately NOT auto-filtered (the doc's flow checks it
 // manually) — a stable-quoted pool reports 0 and would always be excluded.
-// The APR band applies to In-Range APR, not pool-wide APR: the framework's
-// numbers describe what a position inside its range earns, and pool-wide APR
-// runs roughly an order of magnitude lower, so the band would never match.
+// The band applies to pool-wide APR. An earlier version filtered an
+// "in-range APR" proxy on a 30-500% band, but that figure divided fees by the
+// value of liquidity near spot, which assumes your capital carries the same
+// liquidity density as the tightest positions in the pool. Simulating a real
+// position showed it running ~3x optimistic, so it was dropped.
 export const FATE_FILTERS: Record<string, { min: string; max: string }> = {
-  activeApr: { min: "30", max: "500" },
+  apr: { min: "10", max: "100" },
   tvl: { min: "1000000", max: "" },
   priceVolatility: { min: "", max: "15" },
 };

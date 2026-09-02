@@ -56,24 +56,11 @@ export default function PoolRow({ pool, dimmed, selected, show, onSelect }: Pool
           {formatPercent(pool.apr)}
         </td>
       )}
-      {show("activeApr") && (
-        <td
-          title="What a $10,000 position within 2% of spot would have earned, against the in-range liquidity averaged over the timeframe"
-          className={pool.activeApr !== null && pool.activeApr >= 30 ? "has-text-weight-semibold" : undefined}
-        >
-          {pool.activeApr === null ? "-" : formatPercent(pool.activeApr)}
-        </td>
-      )}
       {show("avgDailyFees") && (
         <td>{formatUSD(pool.avgDailyFees)}</td>
       )}
       {show("avgDailyVolume") && (
         <td>{formatUSD(pool.avgDailyVolume)}</td>
-      )}
-      {show("activeTvl") && (
-        <td title="Liquidity within 2% of spot, averaged over the timeframe - the competition an in-range position faces">
-          {pool.activeTvl === null ? "-" : formatUSD(pool.activeTvl)}
-        </td>
       )}
       {show("feeToTvlPct") && (
         <td
