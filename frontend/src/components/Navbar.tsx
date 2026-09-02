@@ -1,9 +1,26 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { LastSim, loadLastSim, lastSimHref } from "@/lib/lastSim";
 
 export default function Navbar() {
   const pathname = usePathname();
+
+  // Read after mount: localStorage does not exist during the server render,
+  // and seeding this from it directly would mismatch on hydration.
+  const [lastSim, setLastSim] = useState<LastSim | null>(null);
+  useEffect(() => {
+    const read = () => setLastSim(loadLastSim());
+    read();
+    // "defishack:lastsim" is same-tab; "storage" covers a second tab.
+    window.addEventListener("defishack:lastsim", read);
+    window.addEventListener("storage", read);
+    return () => {
+      window.removeEventListener("defishack:lastsim", read);
+      window.removeEventListener("storage", read);
+    };
+  }, []);
 
   return (
     <nav className="navbar is-dark" role="navigation" aria-label="main navigation">
@@ -20,9 +37,13 @@ export default function Navbar() {
           >
             Discovery
           </Link>
+          {/* Resumes the last live pool rather than the synthetic preset the
+              bare /simulator loads. Falls back to /simulator until one has
+              been opened. */}
           <Link
             className={`navbar-item${pathname === "/simulator" ? " is-active has-text-weight-semibold" : ""}`}
-            href="/simulator"
+            href={lastSimHref(lastSim)}
+            title={lastSim ? `Resume ${lastSim.label}` : "Open the simulator"}
           >
             Simulator
           </Link>

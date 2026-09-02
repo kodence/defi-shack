@@ -77,7 +77,7 @@ export default function PositionHistoryPanel({ history, watched, pollMins }: Pro
   // Nothing recorded yet, or only the single point from this page load
   if (!history || history.snapshots < 2 || history.inRangePct === null) {
     return (
-      <div className="mt-2 p-2" style={{ background: "#f6f8fa", borderRadius: "6px" }}>
+      <div className="mt-2 p-2" style={{ background: "var(--bg-card)", borderRadius: "6px" }}>
         <p className="heading mb-1">In-range time</p>
         <p className="is-size-7 has-text-grey">
           {history ? `${history.snapshots} snapshot(s) recorded — ` : "No history yet — "}
@@ -94,7 +94,7 @@ export default function PositionHistoryPanel({ history, watched, pollMins }: Pro
   const trend = history.retentionTrend;
 
   return (
-    <div className="mt-2 p-2" style={{ background: "#f6f8fa", borderRadius: "6px" }}>
+    <div className="mt-2 p-2" style={{ background: "var(--bg-card)", borderRadius: "6px" }}>
       <div className="is-flex is-align-items-baseline mb-1" style={{ gap: "0.5rem" }}>
         <p className="heading mb-0">In-range time</p>
         <strong className={tone}>{(pct * 100).toFixed(1)}%</strong>

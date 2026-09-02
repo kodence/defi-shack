@@ -210,7 +210,7 @@ export default function CustomPositionCard({ position: p, prices, onUpdate, onDe
 
       {/* Inline form */}
       {mode !== "none" && (
-        <div className="p-3" style={{ background: "#f6f8fa", borderRadius: "6px" }}>
+        <div className="p-3" style={{ background: "var(--bg-card)", borderRadius: "6px" }}>
           <p className="is-size-7 has-text-weight-semibold mb-2">
             {mode === "check" && "Performance check — copy live values from your DEX position page"}
             {mode === "deposit" && "Log a deposit — exact amounts + USD value + gas from the explorer"}

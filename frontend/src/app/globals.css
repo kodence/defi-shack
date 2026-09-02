@@ -1,3 +1,117 @@
+/* ── Palette ──────────────────────────────────────────────────────────────
+   One black theme for the whole app. These tokens were scoped to
+   .simulator-shell while the simulator was the only dark screen, so
+   Discovery, Portfolio and Track ran on Bulma's light default and the app
+   changed complexion as you moved through it. They live on :root now and
+   every screen reads the same values. */
+:root {
+  --bg-base:      #000000;
+  --bg-surface:   #0a0c10;
+  --bg-card:      #101318;
+  --bg-elevated:  #181d24;
+  --bg-input:     #06070a;
+  --border:       #262c35;
+  --border-light: #171b21;
+  --tx: #e6edf3;
+  --ts: #c9d1d9;
+  --tm: #8b949e;
+  --green:  #3fb950;
+  --red:    #f85149;
+  --blue:   #388bfd;
+  --amber:  #e3b341;
+  --purple: #bc8cff;
+  --green-bg:  rgba(63, 185, 80, 0.10);
+  --red-bg:    rgba(248, 81, 73, 0.10);
+  --blue-bg:   rgba(56, 139, 253, 0.10);
+  --amber-bg:  rgba(227, 179, 65, 0.10);
+  --purple-bg: rgba(188, 140, 255, 0.10);
+  /* Row selection: a tint plus an edge, not a fill -- see .row-selected */
+  --sel-bg:     rgba(56, 139, 253, 0.16);
+  --sel-bg-alt: rgba(56, 139, 253, 0.21);
+  --sel-border: rgba(56, 139, 253, 0.38);
+}
+
+/* Bulma 1.x derives its whole scheme from HSL lightness stops, so it is
+   retuned rather than overridden piecemeal. Its own dark theme bottoms out
+   at 9% lightness; dropping the floor to 0 and thinning the blue cast puts
+   Bulma's navbar, tables, inputs and buttons on the palette above. */
+[data-theme="dark"] {
+  --bulma-scheme-h: 220deg;
+  --bulma-scheme-s: 13%;
+  --bulma-scheme-main-l:     0%;
+  --bulma-scheme-main-bis-l: 4%;
+  --bulma-scheme-main-ter-l: 7%;
+  --bulma-background-l:     9%;
+  --bulma-border-weak-l:   13%;
+  --bulma-border-l:        19%;
+  --bulma-text-weak-l:     56%;
+  --bulma-text-l:          74%;
+  --bulma-text-strong-l:   95%;
+  --bulma-text-title-l:   100%;
+  /* Bulma's link and grey stops are tuned against white. On black the
+     stock link (233deg 100% 63%) lands at 4.28:1 and .has-text-grey at
+     4.48:1 -- both just under AA for body text. Desaturating the link and
+     lifting both clears it. */
+  --bulma-link-s: 88%;
+  --bulma-link-l: 70%;
+  --bulma-link-on-scheme-l: 72%;
+  /* Bulma resolves --bulma-grey on :root, so retuning --bulma-grey-l alone
+     does not recompute it; .has-text-grey lands at 4.48:1 on black. Point
+     it at the palette's muted token (7.4:1) instead. */
+  --bulma-grey: var(--tm);
+  --bulma-grey-l: 60%;
+
+  /* Bulma's dark theme flips the scheme but leaves every `is-light` variant
+     alone -- they are built for light schemes only. Untouched, a
+     `notification is-light` renders as a near-white box (96% lightness)
+     carrying the dark theme's light text, i.e. unreadable, and Portfolio,
+     Track and the Discovery toolbar all use them. Each pale surface is
+     remapped to the dark end of its own colour ramp and its text to the
+     pale end. `--bulma-dark-*` is deliberately untouched: the navbar is
+     `is-dark` and inverting it would turn it white. */
+  --bulma-light-l: 14%;
+  --bulma-light-invert-l: 96%;
+  --bulma-notification-background-l: 12%;
+  --bulma-primary-light-l:        var(--bulma-primary-20-l);
+  --bulma-primary-light-invert-l: var(--bulma-primary-90-l);
+  --bulma-link-light-l:           var(--bulma-link-20-l);
+  --bulma-link-light-invert-l:    var(--bulma-link-90-l);
+  --bulma-info-light-l:           var(--bulma-info-20-l);
+  --bulma-info-light-invert-l:    var(--bulma-info-90-l);
+  --bulma-success-light-l:        var(--bulma-success-20-l);
+  --bulma-success-light-invert-l: var(--bulma-success-90-l);
+  --bulma-warning-light-l:        var(--bulma-warning-20-l);
+  --bulma-warning-light-invert-l: var(--bulma-warning-90-l);
+  --bulma-danger-light-l:         var(--bulma-danger-20-l);
+  --bulma-danger-light-invert-l:  var(--bulma-danger-90-l);
+  --bulma-text-light-l:           var(--bulma-text-20-l);
+  --bulma-text-light-invert-l:    var(--bulma-text-90-l);
+  /* Text on an uncoloured "light" surface (.tag.is-light, and the
+     notification rule below) */
+  --bulma-light-light-invert-l: 92%;
+}
+
+html, body {
+  background-color: var(--bg-base);
+}
+
+/* Bulma generates `.notification.is-light.is-light` with a hardcoded 90%
+   background, so no variable override can reach it -- only a selector that
+   outranks its (0,3,0). The `.tag` twin next to it reads --bulma-light-l and
+   is already handled above. */
+[data-theme="dark"] .notification.is-light.is-light {
+  --bulma-notification-background-l: 12%;
+}
+
+/* Bulma emits the has-text-* helpers as literal `!important` colours rather
+   than variables, so nothing in the palette above can reach them. Two are
+   wrong on black: .has-text-grey lands at 4.48:1, just under AA, and
+   .has-text-warning-dark -- a variant meant to sit on a light background --
+   at 1.27:1, which is effectively invisible. The other two in use
+   (.has-text-success 9.84:1, .has-text-danger 7.49:1) are already fine. */
+[data-theme="dark"] .has-text-grey { color: var(--tm) !important; }
+[data-theme="dark"] .has-text-warning-dark { color: var(--amber) !important; }
+
 .table-container {
   overflow-x: auto;
 }
@@ -23,7 +137,7 @@
 
 .filter-icon.filter-active {
   opacity: 1;
-  color: #3273dc;
+  color: var(--blue);
 }
 
 .filter-dropdown {
@@ -31,9 +145,9 @@
   top: 100%;
   left: 0;
   z-index: 20;
-  background: #1a1a1a;
-  color: #fff;
-  border: 1px solid #444;
+  background: var(--bg-elevated);
+  color: var(--tx);
+  border: 1px solid var(--border);
   border-radius: 4px;
   padding: 0.75rem;
   min-width: 180px;
@@ -41,13 +155,13 @@
 }
 
 .filter-dropdown .label {
-  color: #ccc;
+  color: var(--ts);
 }
 
 .filter-dropdown .input {
-  background: #2a2a2a;
-  border-color: #555;
-  color: #fff;
+  background: var(--bg-input);
+  border-color: var(--border);
+  color: var(--tx);
 }
 
 .sort-icon {
@@ -65,13 +179,46 @@ th.sortable {
 }
 
 th.sortable:hover {
-  background-color: #363636;
-  color: #fff;
+  background-color: var(--bg-elevated);
+  color: var(--tx);
 }
 
-.row-selected {
-  background-color: #3273dc !important;
-  color: #fff;
+/* ── Selected pool rows ───────────────────────────────────────────────────
+   This was a solid blue fill with `color: #fff`, but the colour never
+   reached the cells: Bulma's own `.table td` rule is specificity (0,1,1)
+   and outranks a bare `.row-selected` (0,1,0), so the text stayed dark
+   grey on mid-blue and the Simulate link stayed blue on blue. The fill is
+   now a tint over black and every colour is set where it actually lands --
+   on the cells, and on the striped/hover variants Bulma layers on top. */
+.table tbody tr.row-selected,
+.table.is-striped tbody tr.row-selected,
+.table.is-striped tbody tr.row-selected:nth-child(2n),
+.table.is-hoverable tbody tr.row-selected:hover {
+  background-color: var(--sel-bg);
+}
+.table.is-striped tbody tr.row-selected:nth-child(2n),
+.table.is-hoverable tbody tr.row-selected:hover {
+  background-color: var(--sel-bg-alt);
+}
+.table tbody tr.row-selected td,
+.table tbody tr.row-selected th {
+  color: var(--tx);
+  border-bottom-color: var(--sel-border);
+}
+/* A left edge so a selected row is still identifiable at a glance when
+   several are selected and the tint alone reads as a stripe */
+.table tbody tr.row-selected td:first-child {
+  box-shadow: inset 3px 0 0 0 var(--blue);
+}
+/* Muted sub-lines and links inside the row have their own colours, which
+   the row background does not reach either */
+.table tbody tr.row-selected .has-text-grey,
+.table tbody tr.row-selected .heading {
+  color: var(--ts) !important;
+}
+.table tbody tr.row-selected .button.is-link.is-outlined {
+  color: var(--tx);
+  border-color: var(--blue);
 }
 
 .cell-icon {
@@ -96,28 +243,10 @@ th.sortable:hover {
   padding: 3rem;
 }
 
-/* ── Simulator dark theme — scoped to .simulator-shell ────────────────────── */
+/* ── Simulator shell ──────────────────────────────────────────────────────
+   Typography and box-sizing for the simulator's hand-rolled panels. The
+   colour tokens it used to declare now live on :root. */
 .simulator-shell {
-  --bg-base: #0d1117;
-  --bg-surface: #161b22;
-  --bg-card: #1c2128;
-  --bg-elevated: #22272e;
-  --bg-input: #0d1117;
-  --border: #30363d;
-  --border-light: #21262d;
-  --tx: #e6edf3;
-  --ts: #c9d1d9;
-  --tm: #8b949e;
-  --green: #3fb950;
-  --red: #f85149;
-  --blue: #388bfd;
-  --amber: #e3b341;
-  --purple: #bc8cff;
-  --green-bg: rgba(63, 185, 80, 0.10);
-  --red-bg: rgba(248, 81, 73, 0.10);
-  --blue-bg: rgba(56, 139, 253, 0.10);
-  --amber-bg: rgba(227, 179, 65, 0.10);
-  --purple-bg: rgba(188, 140, 255, 0.10);
   color: var(--tx);
   background: var(--bg-base);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif;

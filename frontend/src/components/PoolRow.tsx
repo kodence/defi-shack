@@ -81,7 +81,7 @@ export default function PoolRow({ pool, dimmed, selected, show, onSelect }: Pool
       {show("correlation") && (
         <td>
           {formatCorrelation(pool.correlation)}
-          <div style={{ fontSize: "0.68rem", color: "#7a7a7a", whiteSpace: "nowrap" }}>
+          <div style={{ fontSize: "0.68rem", color: "var(--tm)", whiteSpace: "nowrap" }}>
             7d {(pool.correlation7d * 100).toFixed(0)}% · 30d {(pool.correlation30d * 100).toFixed(0)}%
           </div>
         </td>

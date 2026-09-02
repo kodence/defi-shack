@@ -14,6 +14,7 @@ import DivergencePanel from "@/components/simulator/DivergencePanel";
 import ValidChecklist  from "@/components/simulator/ValidChecklist";
 import Toast, { useToast } from "@/components/simulator/Toast";
 import { loadPortfolio, savePortfolio, positionFromResult } from "@/lib/portfolio";
+import { saveLastSim } from "@/lib/lastSim";
 import styles from "./page.module.css";
 
 function SimulatorInner() {
@@ -59,6 +60,13 @@ function SimulatorInner() {
           const { config, pool: poolInfo } = await api.getLiveDefault(liveNetwork!, livePoolId!);
           setPool(poolInfo);
           setCfg(config);
+          // Recorded once the pool actually resolves, so the nav link can only
+          // ever point at a pool that loaded -- not one from a failed URL.
+          saveLastSim({
+            network: liveNetwork!,
+            poolId:  livePoolId!,
+            label:   `${poolInfo.name} ${poolInfo.feeLabel}`.trim(),
+          });
           await simulate(config);
           // Presets stay available for quick comparison
           api.getPresets().then(setPresets).catch(() => {});
