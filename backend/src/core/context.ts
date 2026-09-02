@@ -188,6 +188,8 @@ export function buildLiveContext(cfg: SimulationConfig, snap: LivePoolSnapshot):
     id: snap.poolId,
     network: snap.network,
     networkName: snap.networkName,
+    exchange: snap.exchange,
+    exchangeName: snap.exchangeName,
     name: `${base.symbol} / ${quote.symbol}`,
     baseSymbol: base.symbol,
     quoteSymbol: quote.symbol,

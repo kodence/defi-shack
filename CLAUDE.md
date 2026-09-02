@@ -15,6 +15,11 @@ npm run dev:frontend   # Next.js on http://localhost:3000 (Turbopack)
 # Stop everything `npm run dev` started
 npm run dev:stop       # tree-kills the dev processes and frees 3000/3001
 
+# Probe a candidate subgraph with the pipeline's own four requests before
+# wiring it into constants.ts (dialects: v3 | v4 | hyperswap | algebra)
+node tools/probe-subgraphs.mjs v3:uniswap-v3/polygon=<subgraph-id>
+node tools/introspect-subgraph.mjs label=<subgraph-id-or-url>   # field names
+
 # Build
 cd backend && npm run build    # tsc → dist/
 cd frontend && npm run build   # next build
@@ -32,25 +37,29 @@ Monorepo with two independent TypeScript packages (`backend/`, `frontend/`) orch
 ### Data flow
 
 ```
-The Graph (Uniswap V3 subgraph per network)
-  → backend fetches top 500 pools by TVL, poolDayDatas, tokenDayDatas
-  → backend computes metrics (APR, volatility, correlation, fees, volume)
-  → backend caches per (timeframe, networks) for 5 minutes
-  → GET /api/pools?timeframe={7|14|30|90}&networks={csv}
+One source per (exchange, network) -- see SOURCES in constants.ts:
+  V3-schema subgraphs on The Graph (4 dialects) | Messari-schema subgraphs |
+  PancakeSwap explorer API | Orca REST API
+  → backend fans out over every source matching networks × exchanges
+  → each adapter yields ComputedPool rows (metrics it cannot derive are null)
+  → backend caches per (timeframe, networks, exchanges) for 5 minutes
+  → GET /api/pools?timeframe={7|14|30|90}&networks={csv}&exchanges={csv}
   → frontend renders table, applies client-side filtering/sorting/pagination
 ```
 
 ### Backend (`backend/src/`)
 
-- **`constants.ts`** — Network configs (subgraph URLs per chain), TVL floor ($1M), stablecoin list, cache TTL. Environment: `THE_GRAPH_API_KEY` from root `.env`.
-- **`routes/pools.ts`** — Single endpoint. Parses timeframe + networks, checks cache, orchestrates fetch → compute → respond. Returns `{ data: ComputedPool[], meta: { timeframe, poolCount, fetchedAt } }`.
-- **`services/subgraph.ts`** — GraphQL queries to The Graph. Batches pool/token day data fetches with concurrency limit of 10.
+- **`constants.ts`** — The **source registry**: `SOURCES` is one `SourceConfig` per (exchange, network) with its `kind` (`subgraph` | `messari` | `pancake-explorer` | `orca`), subgraph `dialect`, endpoint, per-source request `concurrency`, capability flags (`discovery` / `simulator` / `track`) and a `note` surfaced beside the row. `findSource(exchange, network)` and `sourcesFor(networks, exchanges, cap)` are the only lookups; `TRACK_NETWORKS` is derived. Also TVL floor ($1M), `TVL_CEILING`, `GATEWAY_RETRIES`, stablecoin list, cache TTL. Environment: `THE_GRAPH_API_KEY` from root `.env`.
+- **`services/dialect.ts`** — The V3 forks share one schema apart from a few names (Algebra: `fee`, `derivedMatic`, `maticPriceUSD`; HyperSwap: `derivedNative`, `nativePriceUSD`; V4 adds `hooks`). Every query **aliases** the differing field onto one internal name -- `feeTier`, `derivedNative`, `nativePriceUSD` -- so the response shape and all downstream types are identical across forks. V4 also gets a `txCount_gte` filter on the top-pools page (junk pairs with fabricated prices dominate its TVL ordering).
+- **`services/sources/`** — One discovery adapter per source kind, all returning `ComputedPool[]`: `subgraphDiscovery.ts` (any V3-schema subgraph), `messari.ts` (Messari standard schema: daily volume, LP revenue, TVL, ticks, current token price only), `pancakeExplorer.ts` (Pancake's undocumented info-site API: daily fees for a year, daily volume for 30 days, ticks, current TVL, no price history), `orca.ts` (24h/7d/30d aggregates only). `common.ts` has the shared label/CV/fetch helpers.
+- **`routes/pools.ts`** — Single endpoint. Parses timeframe + `networks` (default ethereum) + `exchanges` (default all), checks cache, fans out over the matching sources with `Promise.allSettled` and dispatches on `source.kind`. A failing source is reported in `meta.errors` beside the rows that arrived rather than blanking the table; only if every source fails is it a 502. Returns `{ data: ComputedPool[], meta: { timeframe, poolCount, fetchedAt, errors? } }`.
+- **`services/subgraph.ts`** — GraphQL queries to any V3-schema endpoint, built through the dialect layer. `querySubgraph` retries `GATEWAY_RETRIES` times with backoff on gateway "bad indexers", timeouts and transport errors (schema errors are thrown straight back) -- several deployments are served by one or two flaky indexers and succeed only on retry. The top-pools page applies the TVL floor client-side rather than as a `where` (pages are TVL-ordered, so the first pool under the floor ends the walk), because older graph-node builds reject a filtered-and-ordered query. Batch fetches take the source's `concurrency`; a pool whose day-data request fails is dropped (with a warning) instead of failing the source.
 - **`services/metrics.ts`** — Pure computation: avg daily fees/volume/TVL, APR, Pearson correlation, price volatility (max deviation from mean, stablecoin-aware token selection).
 - **`services/cache.ts`** — Simple Map-based TTL cache keyed by `timeframe:networks`.
 - **`services/poolSnapshot.ts`** — Live-pool fetch for the simulator: pool meta + windowed ticks (±9200 ticks ≈ price ×/÷2.5, cursor-paginated, max 3 pages) + 365d pool/token history, in 2 GraphQL round trips. TTL cache with in-flight coalescing per `(network, poolId)`.
-- **`routes/simulator.ts`** — `GET /presets`, `GET /presets/:id/default`, `GET /pool/:network/:poolId/default?base=0|1`, `POST /simulate` (accepts `presetId` or `network`+`poolId`; `lite: true` strips chart arrays for the portfolio fan-out).
+- **`routes/simulator.ts`** — `GET /presets`, `GET /presets/:id/default`, `GET /pool/:network/:poolId/default?base=0|1&exchange=<key>`, `POST /simulate` (accepts `presetId` or `exchange`+`network`+`poolId`, exchange defaulting to `uniswap-v3`; `lite: true` strips chart arrays for the portfolio fan-out). Pool ids may be 40-hex addresses or 64-hex Uniswap V4 PoolIds. A source without the `simulator` capability gets a 400 naming why.
 - **`services/db.ts` + `services/history.ts` + `services/poller.ts`** — SQLite position history via **`node:sqlite`** (built into Node 22.5+; no native module to compile, so do not add better-sqlite3). DB lives at `backend/data/defishack.db` (gitignored, WAL mode); override with `DEFISHACK_DB_PATH`. `watched_wallets` drives a background poller (`SNAPSHOT_POLL_INTERVAL_MS`, default 15 min, override `DEFISHACK_POLL_INTERVAL_MS`) that snapshots each watched wallet's positions into `position_snapshots`. Watch endpoints: `GET/POST /api/track/watch`, `DELETE /api/track/watch/:address`.
-- **`routes/track.ts` + `services/tracker.ts`** — `GET /api/track/:address?networks=csv`: active Uniswap V3 positions per wallet. Uncollected fees are computed exactly from on-chain feeGrowth values (BigInt, uint256 wrap-around); vs-HODL benchmarks (initial / 50-50 / all-A / all-B) use entry-day token prices from `tokenDayDatas`. **The deployed subgraphs' `collectedFeesToken1` mirrors token0 (data bug), so lifetime collected fees are excluded — earnings are unclaimed-only.** 60s TTL cache.
+- **`routes/track.ts` + `services/tracker.ts`** — `GET /api/track/:address?networks=csv` (networks limited to `TRACK_NETWORKS`): active concentrated-liquidity positions per wallet, fanned out over every source on the network with the `track` capability (Uniswap V3, PancakeSwap V3 on Ethereum/Base, QuickSwap, HyperSwap; not V4, whose Position entity carries no feeGrowth). NFT token ids collide across the V3 forks on one chain, so `positionId` is namespaced `${exchange}:${id}` for every exchange except Uniswap V3, which keeps the bare id so its recorded history stays attached. Uncollected fees are computed exactly from on-chain feeGrowth values (BigInt, uint256 wrap-around); vs-HODL benchmarks (initial / 50-50 / all-A / all-B) use entry-day token prices from `tokenDayDatas`. **The deployed subgraphs' `collectedFeesToken1` mirrors token0 (data bug), so lifetime collected fees are excluded — earnings are unclaimed-only.** 60s TTL cache.
 - **`core/`** — Simulator engine. `math.ts` (Uniswap V3 liquidity/IL math; `aprFromVolume` includes the position's own L in the denominator = deposit dilution), `liquidity.ts` (active-liquidity curve anchored on pool.liquidity at the current tick, walked outward via `liquidityNet`), `context.ts` (builds a `SimContext` from a preset [synthetic history] or a live snapshot [oriented real history]; base/quote orientation, volume stats with spike trim, historical joint 7d moves), `simulation.ts` (metrics, calc methods current/peak/average/custom, realistic vs worst-case APR, scenarios with recovery days, divergence-loss scenarios, depth-chart buckets, range presets).
 
 ### Simulator orientation model
@@ -64,7 +73,8 @@ All simulator prices are **oriented**: `quote per base` where `baseToken: 0|1` s
 - **`hooks/usePoolData.ts`** — Fetches from backend API, re-fetches on timeframe/network change
 - **`hooks/useFilters.ts`** — Client-side min/max range filtering with defaults (TVL >= $1M, APR >= 1%, fees >= $1K, volume >= $1M)
 - **`hooks/useSorting.ts`** — Column sort state, default TVL descending. String columns use `localeCompare`, numeric use subtraction.
-- **`components/ControlsBar.tsx`** — Dropdowns for opportunity type, exchange (multi-select), network (multi-select), timeframe, and hide-filtered toggle
+- **`components/ControlsBar.tsx`** — Dropdowns for opportunity type, exchange (multi-select, all selected by default, labelled "All exchanges"), network (multi-select), timeframe, and hide-filtered toggle
+- **`components/PoolRow.tsx`** — Renders `null` metrics as a dash with a tooltip (sources without a price series), a `†` beside the exchange carrying the source's `note`, an initials chip where an icon file is missing (`NETWORK_ICONS` / `EXCHANGE_ICONS` are keyed by id and optional), and a disabled Simulate button when `canSimulate` is false. The Simulate link carries `&exchange=` for anything but Uniswap V3, as do the portfolio, track and last-simulation links.
 - **`utils/constants.ts`** — Column definitions, network/exchange lists, pagination config (20 rows/page, 5 pages max, 100 max display)
 - **`app/portfolio`** — Portfolio builder: positions saved from the simulator to localStorage (`defishack.portfolio.v1` via `lib/portfolio.ts`), risk scoring/backbone pick, allocation edits (lite re-simulate), market-wide stress test (stablecoins pinned at $1)
 - **`app/track`** — Wallet position tracking against `/api/track`; remembers the last address in localStorage. Also hosts **custom positions** (`components/track/`, `lib/custom.ts`, localStorage key `defishack.custom.v1`): manually tracked pools on unsupported DEXes/chains with the deposit → check → claim → withdraw lifecycle; current token prices resolve by CoinGecko id through `GET /api/prices?ids=csv` (60s-cached proxy in `backend/src/routes/prices.ts`), with per-token manual USD overrides as fallback
@@ -93,16 +103,29 @@ Backend `ComputedPool` (`backend/src/types/pool.ts`) ↔ frontend `Pool` (`front
 - **Range presets** (`buildRangePresets` in `core/simulation.ts`, rendered by `components/simulator/RangePresets.tsx`): the same deposit repriced at +/-0.5/1/2/5/10/25%, each row clickable to apply that range. Widths mirror the config panel's pills, and each row runs the *full* `computeMetrics` path so presets inherit the calculation method, volume window and deposit size already chosen rather than approximating them. This is the bridge from Discovery's pool-level APR, which cannot know the range you pick, to a number for an actual position. APR and 30d in-range probability are shown together deliberately: on WETH/USDT 0.3% the +/-0.5% row reads 389% APR at 2% in-range, the +/-25% row 8.1% at 83% -- the top APR is almost never the right position.
 
 - **CSS modules: `.tbl td { color: ... }` outranks a bare state class on the same cell.** The base cell rule is specificity (0,1,1) and beats `.good` / `.tdIL` / `.up` at (0,1,0), so colour-coding applied directly to a `<td>` silently renders in the default text colour -- no error, just a monochrome table. Scope such rules as `.tbl .good` (0,2,0), which wins and still matches when the class sits on a nested span instead. This had quietly flattened the whole scenario table's IL/fees/PnL coding.
+- **Source coverage is per (exchange, network), and every ID was probed before being wired in.** Docs pages and the Graph Explorer list deployments that are unindexed, months stale, or served by one dead indexer; `tools/probe-subgraphs.mjs` sends the pipeline's own four requests and is the only test that counts. What that found, and why the registry looks the way it does:
+  - **Uniswap V3**: official deployments on Ethereum, Arbitrum, Base, Optimism, Polygon, Avalanche. The official BSC one (`F85MNz...`) answers only trivial queries; a community deployment (`G5MUbS...`) carries real traffic and works with retries. **Optimism goes down at the gateway for stretches** -- all four of its indexers unavailable at once -- and then the table shows "Unavailable right now" for it; nothing in this codebase can fix that.
+  - **Uniswap V4**: native schema plus `hooks`, on all seven EVM chains; Base and BSC use the deployments the explorer shows traffic on (the ones published beside mainnet's are stuck with indexing errors); Polygon's bundle reports the native price as 0, so USD prices come from `tokenDayData` there. Discovery + simulator only.
+  - **PancakeSwap V3**: native subgraphs on Ethereum and Base (full capability). Its BSC subgraph has carried an indexing error for years and Messari's BSC copy stopped in August 2026, so BSC and Arbitrum read Pancake's explorer API: discovery only, no volatility/correlation. That API returns every number as a string.
+  - **SushiSwap V3**: Sushi's own subgraphs died with the hosted service; Messari's indexing remains on Ethereum, Arbitrum and Avalanche (discovery only, no price series, junk-pair ordering filtered by swap count). No V3 subgraph of any schema exists for Sushi on Polygon, Optimism or BSC.
+  - **QuickSwap**: wired to its current Algebra Integral deployment (the older V3 one is drained and served by two failing indexers), but its largest Polygon pool is ~$120K -- under the $1M floor -- so it returns no rows until the floor is lowered or the liquidity returns.
+  - **HyperSwap** (HyperEVM): native V3 schema on an Ormi-hosted Graph-compatible endpoint, full capability.
+  - **Orca** (Solana): public REST API with 24h/7d/30d aggregates only; discovery with the series-derived columns blank, no simulator or tracker. The 7-day and 14-day timeframes both read Orca's 7d window, 30 and 90 its 30d.
+- **A reconstruction above the subgraph's own TVL is rejected.** The subgraph figure is the contract's whole balance and over-counts (2-11x), so a tick walk that comes out *above* it means bad data went in, not a better answer. `RECONSTRUCTION_MAX_RATIO` (1.5) falls such rows back to the source figure and they count in the `[pools]` warning. The case that motivated it: Polygon USDC/USDT 0.01% walked to $3.4B against a $1.55M pool, with `sum(liquidityNet) == 0` and the cumulative walk matching `pool.liquidity` exactly -- the subgraph's tick data claimed ~10^15 of liquidity between ticks 4054 and 39122, which is internally consistent and physically impossible. The two self-checks therefore do not suffice on their own.
 - **Correlation:** Pearson correlation of daily USD prices for both tokens, aligned by date
 
-## Supported Networks
+## Source Matrix
 
-Each network has its own Uniswap V3 subgraph on The Graph decentralized network:
+Discovery (D), simulator (S), tracker (T). See `SOURCES` in `backend/src/constants.ts` for the endpoints and the reasoning behind each choice.
 
-| Network | Subgraph ID |
-|---------|-------------|
-| Ethereum | `5zvR82QoaXYFyDEKLZ9t6v9adgnptxYpKpSbxtgVENFV` |
-| Arbitrum | `FbCGRftH4a3yZugY7TnbYgPJVEv2LvMT6oF1fxPe9aJM` |
-| Base | `43Hwfi3dJSoGpyas9VwNoDAv55yjgGrPpNSmbQZArzMG` |
+| Exchange | Ethereum | Arbitrum | Base | Optimism | Polygon | BSC | Avalanche | HyperEVM | Solana |
+|---|---|---|---|---|---|---|---|---|---|
+| Uniswap V3 | DST | DST | DST | DST¹ | DST | DST¹ | DST | – | – |
+| Uniswap V4 | DS | DS | DS | DS | DS | DS | DS | – | – |
+| PancakeSwap V3 | DST | D² | DST | – | – | D² | – | – | – |
+| SushiSwap V3 | D³ | D³ | – | – | – | – | D³ | – | – |
+| QuickSwap | – | – | – | – | DST⁴ | – | – | – | – |
+| HyperSwap V3 | – | – | – | – | – | – | – | DST | – |
+| Orca | – | – | – | – | – | – | – | – | D⁵ |
 
-All use the same schema: `pools`, `poolDayDatas`, `tokenDayDatas`.
+¹ thinly indexed: retries and a lower request concurrency; Optimism drops out entirely at times · ² PancakeSwap explorer API, no price history · ³ Messari schema, no price history · ⁴ no pool above the $1M floor · ⁵ 7d/30d aggregates only

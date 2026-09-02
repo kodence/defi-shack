@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { VALID_NETWORKS, SNAPSHOT_POLL_INTERVAL_MS } from "../constants";
+import { TRACK_NETWORKS, SNAPSHOT_POLL_INTERVAL_MS } from "../constants";
 import { getTrackedPositions } from "../services/tracker";
 import {
   addWatch, getHistory, listWatched, recordSnapshots, removeWatch,
@@ -15,8 +15,8 @@ function parseNetworks(param: unknown): string[] | null {
   const raw = typeof param === "string" ? param : "";
   const networks = raw
     ? raw.split(",").map(n => n.trim().toLowerCase()).filter(Boolean)
-    : [...VALID_NETWORKS];
-  return networks.every(n => VALID_NETWORKS.includes(n)) ? networks : null;
+    : [...TRACK_NETWORKS];
+  return networks.every(n => TRACK_NETWORKS.includes(n)) ? networks : null;
 }
 
 // ── Watchlist ─────────────────────────────────────────────────────────────────
@@ -33,9 +33,9 @@ router.post("/watch", (req: Request, res: Response) => {
     res.status(400).json({ error: "Invalid wallet address" });
     return;
   }
-  const nets = Array.isArray(networks) && networks.length ? networks : [...VALID_NETWORKS];
-  if (!nets.every(n => VALID_NETWORKS.includes(n))) {
-    res.status(400).json({ error: `networks must be from: ${VALID_NETWORKS.join(", ")}` });
+  const nets = Array.isArray(networks) && networks.length ? networks : [...TRACK_NETWORKS];
+  if (!nets.every(n => TRACK_NETWORKS.includes(n))) {
+    res.status(400).json({ error: `networks must be from: ${TRACK_NETWORKS.join(", ")}` });
     return;
   }
   addWatch(address, nets);
@@ -52,7 +52,7 @@ router.delete("/watch/:address", (req: Request<{ address: string }>, res: Respon
   }
   const nets = parseNetworks(req.query.networks);
   if (!nets) {
-    res.status(400).json({ error: `networks must be from: ${VALID_NETWORKS.join(", ")}` });
+    res.status(400).json({ error: `networks must be from: ${TRACK_NETWORKS.join(", ")}` });
     return;
   }
   removeWatch(address, typeof req.query.networks === "string" ? nets : undefined);
@@ -71,7 +71,7 @@ router.get("/:address", async (req: Request<{ address: string }>, res: Response)
 
   const networks = parseNetworks(req.query.networks);
   if (!networks) {
-    res.status(400).json({ error: `networks must be from: ${VALID_NETWORKS.join(", ")}` });
+    res.status(400).json({ error: `networks must be from: ${TRACK_NETWORKS.join(", ")}` });
     return;
   }
 

@@ -1,5 +1,6 @@
-import { NETWORKS, CACHE_TTL_MS } from "../constants";
+import { CACHE_TTL_MS, findSource } from "../constants";
 import { querySubgraph } from "./subgraph";
+import { bundleQuery, poolFeeField, tokenFields } from "./dialect";
 import {
   PoolMetaQueryResponse,
   PoolSnapshotQueryResponse,
@@ -36,6 +37,8 @@ export interface TokenPriceDay {
 export interface LivePoolSnapshot {
   network:      string;
   networkName:  string;
+  exchange:     string;
+  exchangeName: string;
   poolId:       string;
   feeTier:      number;
   token0:       SnapshotToken;
@@ -61,37 +64,40 @@ const MAX_TICK_PAGES = 3;
 // ── TTL cache with in-flight coalescing ───────────────────────────────────────
 const cache = new Map<string, { promise: Promise<LivePoolSnapshot>; at: number }>();
 
-export function getPoolSnapshot(network: string, poolId: string): Promise<LivePoolSnapshot> {
-  const key = `${network}:${poolId.toLowerCase()}`;
+export function getPoolSnapshot(exchange: string, network: string, poolId: string): Promise<LivePoolSnapshot> {
+  const key = `${exchange}:${network}:${poolId.toLowerCase()}`;
   const entry = cache.get(key);
   if (entry && Date.now() - entry.at < CACHE_TTL_MS) return entry.promise;
 
-  const promise = fetchSnapshot(network, poolId.toLowerCase());
+  const promise = fetchSnapshot(exchange, network, poolId.toLowerCase());
   cache.set(key, { promise, at: Date.now() });
   promise.catch(() => cache.delete(key));  // failed fetches shouldn't poison the cache
   return promise;
 }
 
 // ── Fetching ──────────────────────────────────────────────────────────────────
-async function fetchSnapshot(network: string, poolId: string): Promise<LivePoolSnapshot> {
-  const config = NETWORKS[network];
-  if (!config) throw new Error(`Unknown network: ${network}`);
-  const url = config.subgraphUrl;
+async function fetchSnapshot(exchange: string, network: string, poolId: string): Promise<LivePoolSnapshot> {
+  const source = findSource(exchange, network);
+  if (!source) throw new Error(`Unknown exchange/network: ${exchange} on ${network}`);
+  if (!source.simulator)
+    throw new Error(`Simulation is not available for ${source.exchangeName} on ${source.networkName}: its source carries no tick liquidity or daily price history`);
+  const url = source.url;
+  const d = source.dialect;
 
-  // Query 1: pool metadata (tokens, decimals, USD pricing via derivedETH)
+  // Query 1: pool metadata (tokens, decimals, USD pricing via derived-native)
   const meta = await querySubgraph<PoolMetaQueryResponse>(`{
     pool(id: "${poolId}") {
-      id feeTier tick liquidity sqrtPrice totalValueLockedUSD
-      token0 { id symbol decimals derivedETH }
-      token1 { id symbol decimals derivedETH }
+      id ${poolFeeField(d)} tick liquidity sqrtPrice totalValueLockedUSD
+      token0 { ${tokenFields(d)} }
+      token1 { ${tokenFields(d)} }
     }
-    bundle(id: "1") { ethPriceUSD }
+    ${bundleQuery(d)}
   }`, url);
 
   if (!meta.pool) throw new Error("Pool not found on this network");
   if (meta.pool.tick === null) throw new Error("Pool has no active liquidity");
 
-  const ethUsd = parseFloat(meta.bundle?.ethPriceUSD ?? "0");
+  const nativeUsd = parseFloat(meta.bundle?.nativePriceUSD ?? "0");
   const tick = parseInt(meta.pool.tick, 10);
   const lo = Math.max(tick - TICK_WINDOW, MIN_TICK);
   const hi = Math.min(tick + TICK_WINDOW, MAX_TICK);
@@ -150,9 +156,9 @@ async function fetchSnapshot(network: string, poolId: string): Promise<LivePoolS
     if (pages > MAX_TICK_PAGES && page.ticks.length === 1000) { clipped = true; break; }
   }
 
-  const tokenUsd = (derivedETH: string, days: TokenPriceDay[]): number => {
-    const viaEth = parseFloat(derivedETH) * ethUsd;
-    if (viaEth > 0) return viaEth;
+  const tokenUsd = (derivedNative: string, days: TokenPriceDay[]): number => {
+    const viaNative = parseFloat(derivedNative) * nativeUsd;
+    if (viaNative > 0) return viaNative;
     return days.length ? days[days.length - 1].priceUsd : 0;
   };
 
@@ -182,20 +188,22 @@ async function fetchSnapshot(network: string, poolId: string): Promise<LivePoolS
 
   return {
     network,
-    networkName: config.name,
+    networkName: source.networkName,
+    exchange: source.exchange,
+    exchangeName: source.exchangeName,
     poolId,
     feeTier: parseInt(meta.pool.feeTier, 10),
     token0: {
       id: meta.pool.token0.id,
       symbol: meta.pool.token0.symbol,
       decimals: parseInt(meta.pool.token0.decimals, 10),
-      priceUsd: tokenUsd(meta.pool.token0.derivedETH, token0Days),
+      priceUsd: tokenUsd(meta.pool.token0.derivedNative, token0Days),
     },
     token1: {
       id: meta.pool.token1.id,
       symbol: meta.pool.token1.symbol,
       decimals: parseInt(meta.pool.token1.decimals, 10),
-      priceUsd: tokenUsd(meta.pool.token1.derivedETH, token1Days),
+      priceUsd: tokenUsd(meta.pool.token1.derivedNative, token1Days),
     },
     tick: parseInt(data.pool.tick, 10),
     liquidityRaw: parseFloat(data.pool.liquidity),

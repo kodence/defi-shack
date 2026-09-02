@@ -21,8 +21,11 @@ async function req<T>(method: string, path: string, body?: unknown): Promise<T> 
 export const api = {
   getPresets:      ()                          => req<PoolPreset[]>       ("GET",  "/presets"),
   getDefault:      (id: string)                => req<SimulationConfig>   ("GET",  `/presets/${id}/default`),
-  getLiveDefault:  (network: string, poolId: string, base?: 0 | 1) =>
-    req<LivePoolDefault>("GET", `/pool/${network}/${poolId}/default${base !== undefined ? `?base=${base}` : ""}`),
+  getLiveDefault:  (network: string, poolId: string, base?: 0 | 1, exchange = "uniswap-v3") => {
+    const q = new URLSearchParams({ exchange });
+    if (base !== undefined) q.set("base", String(base));
+    return req<LivePoolDefault>("GET", `/pool/${network}/${poolId}/default?${q}`);
+  },
   simulate:        (cfg: SimulationConfig)     => req<SimulationResult>   ("POST", "/simulate", cfg),
   // lite: charts stripped server-side — used by the portfolio page fan-out
   simulateLite:    (cfg: SimulationConfig)     => req<SimulationResult>   ("POST", "/simulate", { ...cfg, lite: true }),

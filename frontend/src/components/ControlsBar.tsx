@@ -8,6 +8,8 @@ interface ControlsBarProps {
   onTimeframeChange: (timeframe: number) => void;
   selectedNetworks: string[];
   onNetworksChange: (networks: string[]) => void;
+  selectedExchanges: string[];
+  onExchangesChange: (exchanges: string[]) => void;
   hideFiltered: boolean;
   onHideFilteredChange: (hide: boolean) => void;
 }
@@ -46,10 +48,13 @@ function MultiSelectDropdown({
     }
   }
 
-  const selectedLabels = options
-    .filter((o) => selected.includes(o.key))
-    .map((o) => o.label)
-    .join(", ");
+  // Seven exchange names joined is a paragraph, not a label
+  const selectedLabels = selected.length === options.length
+    ? `All ${label.toLowerCase()}s`
+    : options
+        .filter((o) => selected.includes(o.key))
+        .map((o) => o.label)
+        .join(", ");
 
   return (
     <div className="field">
@@ -98,6 +103,8 @@ export default function ControlsBar({
   onTimeframeChange,
   selectedNetworks,
   onNetworksChange,
+  selectedExchanges,
+  onExchangesChange,
   hideFiltered,
   onHideFilteredChange,
 }: ControlsBarProps) {
@@ -120,8 +127,8 @@ export default function ControlsBar({
         <MultiSelectDropdown
           label="Exchange"
           options={EXCHANGES}
-          selected={["uniswap-v3"]}
-          onChange={() => {}}
+          selected={selectedExchanges}
+          onChange={onExchangesChange}
         />
       </div>
 

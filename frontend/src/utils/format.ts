@@ -13,10 +13,11 @@ export function formatUSD(value: number): string {
   return `${sign}$${a.toFixed(2)}`;
 }
 
-export function formatPercent(value: number): string {
-  return `${value.toFixed(2)}%`;
+// Series-derived metrics are null where a source has no daily price data
+export function formatPercent(value: number | null, decimals = 2): string {
+  return value === null ? "—" : `${value.toFixed(decimals)}%`;
 }
 
-export function formatCorrelation(value: number): string {
-  return `${(value * 100).toFixed(2)}%`;
+export function formatCorrelation(value: number | null): string {
+  return value === null ? "—" : `${(value * 100).toFixed(2)}%`;
 }

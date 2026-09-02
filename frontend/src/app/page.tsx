@@ -4,12 +4,14 @@ import { useState } from "react";
 import { usePoolData } from "@/hooks/usePoolData";
 import ControlsBar from "@/components/ControlsBar";
 import PoolTable from "@/components/PoolTable";
+import { EXCHANGES } from "@/utils/constants";
 
 export default function Home() {
   const [timeframe, setTimeframe] = useState(30);
   const [selectedNetworks, setSelectedNetworks] = useState(["ethereum"]);
+  const [selectedExchanges, setSelectedExchanges] = useState<string[]>(EXCHANGES.map((e) => e.key));
   const [hideFiltered, setHideFiltered] = useState(true);
-  const { pools, loading, error } = usePoolData(timeframe, selectedNetworks);
+  const { pools, loading, error, sourceErrors } = usePoolData(timeframe, selectedNetworks, selectedExchanges);
 
   return (
     <section className="section">
@@ -24,6 +26,8 @@ export default function Home() {
           onTimeframeChange={setTimeframe}
           selectedNetworks={selectedNetworks}
           onNetworksChange={setSelectedNetworks}
+          selectedExchanges={selectedExchanges}
+          onExchangesChange={setSelectedExchanges}
           hideFiltered={hideFiltered}
           onHideFilteredChange={setHideFiltered}
         />
@@ -40,6 +44,15 @@ export default function Home() {
         {error && (
           <div className="notification is-danger is-light">
             <strong>Error:</strong> {error}
+          </div>
+        )}
+
+        {/* A source that failed is reported beside the rows that arrived,
+            rather than hiding a table that is mostly fine */}
+        {!loading && sourceErrors.length > 0 && (
+          <div className="notification is-warning is-light py-2 px-4 is-size-7">
+            <strong>Unavailable right now:</strong>{" "}
+            {sourceErrors.map((e) => e.source).join(", ")} — the rest of the table is current.
           </div>
         )}
 

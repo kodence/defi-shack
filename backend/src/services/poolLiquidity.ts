@@ -16,10 +16,14 @@ export interface PoolLiquidityStats {
 
 const sqrtRatio = (tick: number): number => Math.pow(1.0001, tick / 2);
 
+// Token USD prices are derived-native x native price. A source whose bundle
+// is broken (Uniswap V4 on Polygon reports its native price as 0) can pass a
+// fallback per token, typically the newest tokenDayData price.
 export function computePoolLiquidity(
   pool: SubgraphPool,
   rawTicks: SubgraphTickLite[],
-  ethPriceUsd: number
+  nativePriceUsd: number,
+  fallback?: { token0Usd?: number; token1Usd?: number }
 ): PoolLiquidityStats | null {
   if (pool.tick === null || rawTicks.length < 2) return null;
 
@@ -27,8 +31,8 @@ export function computePoolLiquidity(
   const activeLiquidity = parseFloat(pool.liquidity);
   const dec0 = parseInt(pool.token0.decimals, 10);
   const dec1 = parseInt(pool.token1.decimals, 10);
-  const price0 = parseFloat(pool.token0.derivedETH) * ethPriceUsd;
-  const price1 = parseFloat(pool.token1.derivedETH) * ethPriceUsd;
+  const price0 = (parseFloat(pool.token0.derivedNative) * nativePriceUsd) || fallback?.token0Usd || 0;
+  const price1 = (parseFloat(pool.token1.derivedNative) * nativePriceUsd) || fallback?.token1Usd || 0;
   if (!isFinite(activeLiquidity) || (price0 <= 0 && price1 <= 0)) return null;
 
   const ticks = rawTicks

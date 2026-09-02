@@ -19,8 +19,9 @@ import styles from "./page.module.css";
 
 function SimulatorInner() {
   const params = useSearchParams();
-  const liveNetwork = params.get("network");
-  const livePoolId  = params.get("pool");
+  const liveNetwork  = params.get("network");
+  const livePoolId   = params.get("pool");
+  const liveExchange = params.get("exchange") ?? "uniswap-v3";
   const isLiveTarget = Boolean(liveNetwork && livePoolId);
 
   const [presets,  setPresets]  = useState<PoolPreset[]>([]);
@@ -57,14 +58,15 @@ function SimulatorInner() {
     (async () => {
       try {
         if (isLiveTarget) {
-          const { config, pool: poolInfo } = await api.getLiveDefault(liveNetwork!, livePoolId!);
+          const { config, pool: poolInfo } = await api.getLiveDefault(liveNetwork!, livePoolId!, undefined, liveExchange);
           setPool(poolInfo);
           setCfg(config);
           // Recorded once the pool actually resolves, so the nav link can only
           // ever point at a pool that loaded -- not one from a failed URL.
           saveLastSim({
-            network: liveNetwork!,
-            poolId:  livePoolId!,
+            exchange: liveExchange,
+            network:  liveNetwork!,
+            poolId:   livePoolId!,
             label:   `${poolInfo.name} ${poolInfo.feeLabel}`.trim(),
           });
           await simulate(config);
@@ -88,7 +90,7 @@ function SimulatorInner() {
       }
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [liveNetwork, livePoolId]);
+  }, [liveNetwork, livePoolId, liveExchange]);
 
   // ── Preset change ─────────────────────────────────────────────────────────
   const handlePresetSelect = useCallback(async (p: PoolPreset) => {
@@ -159,7 +161,7 @@ function SimulatorInner() {
         <span className={styles.hdrTitle}>LP Simulator</span>
         <span className={styles.hdrBadge}>
           <span className={styles.dot} />
-          {pool?.source === "live" ? `Uniswap V3 · ${pool.networkName ?? ""} · live` : "Uniswap V3"}
+          {pool?.source === "live" ? `${pool.exchangeName ?? "Uniswap V3"} · ${pool.networkName ?? ""} · live` : "Uniswap V3"}
         </span>
         <span className={styles.hdrSep} />
         {pool && (

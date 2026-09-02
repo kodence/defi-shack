@@ -221,11 +221,21 @@ th.sortable:hover {
   border-color: var(--blue);
 }
 
+/* Exchange and network names never wrap under their icon */
+.table td.cell-source { white-space: nowrap; }
+
 .cell-icon {
   width: 16px;
   height: 16px;
   margin-right: 4px;
   vertical-align: middle;
+}
+/* Rendered in place of a missing icon file: two initials in a small chip */
+.cell-icon--fallback {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px; margin-right: 4px; vertical-align: middle;
+  border-radius: 4px; background: var(--bg-elevated); border: 1px solid var(--border);
+  font-size: 8px; font-weight: 700; letter-spacing: .02em; color: var(--ts);
 }
 
 .pool-row-hidden {

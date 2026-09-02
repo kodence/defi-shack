@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { Pool } from "@/types/pool";
 import { formatUSD, formatPercent, formatCorrelation } from "@/utils/format";
 import {
@@ -15,9 +16,24 @@ interface PoolRowProps {
   onSelect: (poolId: string) => void;
 }
 
+// Icon files are optional: a network or exchange without one renders as an
+// initials chip instead of a broken image.
+function SourceIcon({ src, label }: { src?: string; label: string }) {
+  const [failed, setFailed] = useState(false);
+  if (src && !failed) {
+    return <img src={src} alt="" className="cell-icon" onError={() => setFailed(true)} />;
+  }
+  const initials = label.split(/[\s-]+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+  return <span className="cell-icon cell-icon--fallback" aria-hidden="true">{initials}</span>;
+}
+
+// Series-derived columns are null where the source has no daily price data
+const dash = <span className="has-text-grey" title="Not available from this source">—</span>;
+
 export default function PoolRow({ pool, dimmed, selected, show, onSelect }: PoolRowProps) {
-  const exchangeIcon = EXCHANGE_ICONS[pool.exchange];
-  const networkIcon = NETWORK_ICONS[pool.network];
+  const exchangeIcon = EXCHANGE_ICONS[pool.exchangeId];
+  const networkIcon = NETWORK_ICONS[pool.networkId];
+  const exchangeParam = pool.exchangeId !== "uniswap-v3" ? `&exchange=${pool.exchangeId}` : "";
 
   return (
     <tr
@@ -32,21 +48,26 @@ export default function PoolRow({ pool, dimmed, selected, show, onSelect }: Pool
         <td>{pool.poolName}</td>
       )}
       {show("exchange") && (
-        <td>
-          {exchangeIcon && <img src={exchangeIcon} alt="" className="cell-icon" />}
+        <td className="cell-source" title={pool.sourceNote}>
+          <SourceIcon src={exchangeIcon} label={pool.exchange} />
           {pool.exchange}
+          {pool.sourceNote && <span className="has-text-grey"> †</span>}
         </td>
       )}
       {show("network") && (
-        <td>
-          {networkIcon && <img src={networkIcon} alt="" className="cell-icon" />}
+        <td className="cell-source">
+          <SourceIcon src={networkIcon} label={pool.network} />
           {pool.network}
         </td>
       )}
       {show("tvl") && (
-        <td title={pool.tvlSource === "subgraph"
-          ? "Tick data unavailable - falls back to the subgraph's reported TVL, which runs high"
-          : "Rebuilt from tick liquidity"}>
+        <td title={
+          pool.tvlSource === "subgraph"
+            ? "Tick data unavailable - falls back to the subgraph's reported TVL, which runs high"
+            : pool.tvlSource === "api"
+              ? "As reported by the source's API"
+              : "Rebuilt from tick liquidity"
+        }>
           {formatUSD(pool.tvl)}
           {pool.tvlSource === "subgraph" && <span className="has-text-grey"> *</span>}
         </td>
@@ -73,30 +94,46 @@ export default function PoolRow({ pool, dimmed, selected, show, onSelect }: Pool
       {show("volumeCV") && (
         <td
           title="Volume coefficient of variation — lower means more consistent volume"
-          style={pool.volumeCV > 1 ? { color: "hsl(348, 86%, 51%)" } : undefined}
+          style={pool.volumeCV !== null && pool.volumeCV > 1 ? { color: "hsl(348, 86%, 51%)" } : undefined}
         >
-          {(pool.volumeCV * 100).toFixed(0)}%
+          {pool.volumeCV === null ? dash : `${(pool.volumeCV * 100).toFixed(0)}%`}
         </td>
       )}
       {show("correlation") && (
         <td>
-          {formatCorrelation(pool.correlation)}
-          <div style={{ fontSize: "0.68rem", color: "var(--tm)", whiteSpace: "nowrap" }}>
-            7d {(pool.correlation7d * 100).toFixed(0)}% · 30d {(pool.correlation30d * 100).toFixed(0)}%
-          </div>
+          {pool.correlation === null ? dash : (
+            <>
+              {formatCorrelation(pool.correlation)}
+              <div style={{ fontSize: "0.68rem", color: "var(--tm)", whiteSpace: "nowrap" }}>
+                7d {formatPercent(pool.correlation7d === null ? null : pool.correlation7d * 100, 0)}
+                {" · "}
+                30d {formatPercent(pool.correlation30d === null ? null : pool.correlation30d * 100, 0)}
+              </div>
+            </>
+          )}
         </td>
       )}
       {show("priceVolatility") && (
-        <td>{formatPercent(pool.priceVolatility)}</td>
+        <td>{pool.priceVolatility === null ? dash : formatPercent(pool.priceVolatility)}</td>
       )}
       <td onClick={(e) => e.stopPropagation()}>
-        <Link
-          className="button is-small is-link is-outlined"
-          href={`/simulator?network=${pool.networkId}&pool=${pool.id}`}
-          title="Simulate a position in this pool"
-        >
-          Simulate
-        </Link>
+        {pool.canSimulate ? (
+          <Link
+            className="button is-small is-link is-outlined"
+            href={`/simulator?network=${pool.networkId}&pool=${pool.id}${exchangeParam}`}
+            title="Simulate a position in this pool"
+          >
+            Simulate
+          </Link>
+        ) : (
+          <button
+            className="button is-small is-outlined"
+            disabled
+            title="Simulation needs tick liquidity and daily price history, which this source does not provide"
+          >
+            Simulate
+          </button>
+        )}
       </td>
     </tr>
   );

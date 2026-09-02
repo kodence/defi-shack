@@ -61,23 +61,51 @@ export const FEE_TO_TVL_TARGET = 0.059;
 export const TIMEFRAMES = [7, 14, 30, 90] as const;
 
 export const NETWORKS = [
-  { key: "ethereum", label: "Ethereum" },
-  { key: "arbitrum", label: "Arbitrum" },
-  { key: "base", label: "Base" },
+  { key: "ethereum",  label: "Ethereum" },
+  { key: "arbitrum",  label: "Arbitrum" },
+  { key: "base",      label: "Base" },
+  { key: "optimism",  label: "Optimism" },
+  { key: "polygon",   label: "Polygon" },
+  { key: "bsc",       label: "BSC" },
+  { key: "avalanche", label: "Avalanche" },
+  { key: "hyperevm",  label: "HyperEVM" },
+  { key: "solana",    label: "Solana" },
 ] as const;
+
+// Networks with at least one source the tracker can read positions from --
+// Solana has none (the Orca API exposes no positions)
+export const TRACK_NETWORKS = NETWORKS.filter((n) => n.key !== "solana");
 
 export const EXCHANGES = [
-  { key: "uniswap-v3", label: "Uniswap-V3" },
+  { key: "uniswap-v3",     label: "Uniswap V3" },
+  { key: "uniswap-v4",     label: "Uniswap V4" },
+  { key: "pancakeswap-v3", label: "PancakeSwap V3" },
+  { key: "sushiswap-v3",   label: "SushiSwap V3" },
+  { key: "quickswap",      label: "QuickSwap" },
+  { key: "hyperswap-v3",   label: "HyperSwap V3" },
+  { key: "orca",           label: "Orca" },
 ] as const;
 
-// Icon mapping — drop SVG/PNG files into frontend/public/icons/
-// File names must match the values below (e.g. ethereum.svg, uniswap-v3.svg)
+// Icon mapping by key -- drop PNG/SVG files into frontend/public/icons/.
+// A missing file is fine: the row falls back to an initials chip.
 export const NETWORK_ICONS: Record<string, string> = {
-  Ethereum: "/icons/ethereum.png",
-  Arbitrum: "/icons/arbitrum.png",
-  Base: "/icons/base.png",
+  ethereum:  "/icons/ethereum.png",
+  arbitrum:  "/icons/arbitrum.png",
+  base:      "/icons/base.png",
+  optimism:  "/icons/optimism.png",
+  polygon:   "/icons/polygon.png",
+  bsc:       "/icons/bnb.png",
+  avalanche: "/icons/avalanche.png",
+  hyperevm:  "/icons/hyperliquid.jpg",
+  solana:    "/icons/solana.png",
 };
 
 export const EXCHANGE_ICONS: Record<string, string> = {
-  "Uniswap-V3": "/icons/uniswap-v3.png",
+  "uniswap-v3":     "/icons/uniswap-v3.png",
+  "uniswap-v4":     "/icons/uniswap-v3.png",
+  "pancakeswap-v3": "/icons/pancakeswap.png",
+  "sushiswap-v3":   "/icons/sushiswap.png",
+  "quickswap":      "/icons/quickswap.png",
+  "hyperswap-v3":   "/icons/hyperswap.png",
+  "orca":           "/icons/orca.png",
 };

@@ -9,6 +9,7 @@
 const KEY = "defishack.lastsim.v1";
 
 export interface LastSim {
+  exchange?: string; // absent on entries written before multi-exchange support
   network: string;
   poolId:  string;
   label:   string;   // e.g. "WETH / USDT 0.3%" -- for the nav tooltip
@@ -41,7 +42,8 @@ export function saveLastSim(entry: Omit<LastSim, "at">): void {
 }
 
 export function lastSimHref(last: LastSim | null): string {
-  return last
-    ? `/simulator?network=${encodeURIComponent(last.network)}&pool=${encodeURIComponent(last.poolId)}`
-    : "/simulator";
+  if (!last) return "/simulator";
+  const q = new URLSearchParams({ network: last.network, pool: last.poolId });
+  if (last.exchange && last.exchange !== "uniswap-v3") q.set("exchange", last.exchange);
+  return `/simulator?${q}`;
 }

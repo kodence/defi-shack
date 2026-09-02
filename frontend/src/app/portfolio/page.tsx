@@ -209,7 +209,7 @@ export default function PortfolioPage() {
                     const grade = riskGrade(score);
                     const row = stress?.get(p.id);
                     const simHref = p.config.network && p.config.poolId
-                      ? `/simulator?network=${p.config.network}&pool=${p.config.poolId}`
+                      ? `/simulator?network=${p.config.network}&pool=${p.config.poolId}${p.config.exchange && p.config.exchange !== "uniswap-v3" ? `&exchange=${p.config.exchange}` : ""}`
                       : "/simulator";
                     return (
                       <tr key={p.id}>

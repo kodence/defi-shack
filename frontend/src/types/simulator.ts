@@ -19,6 +19,8 @@ export interface SimPoolInfo {
   id:               string;
   network?:         string;
   networkName?:     string;
+  exchange?:        string;
+  exchangeName?:    string;
   name:             string;
   baseSymbol:       string;
   quoteSymbol:      string;
@@ -44,6 +46,7 @@ export interface DlScenarioInput {
 
 export interface SimulationConfig {
   presetId?:      string;
+  exchange?:      string;
   network?:       string;
   poolId?:        string;
   baseToken?:     0 | 1;

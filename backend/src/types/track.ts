@@ -54,6 +54,8 @@ export interface TrackedPosition {
   owner:        string;
   network:      string;
   networkName:  string;
+  exchange:     string;
+  exchangeName: string;
   poolId:       string;
   poolName:     string;
   feeLabel:     string;

@@ -6,11 +6,12 @@ import {
   buildPresetContext, buildLiveContext, autoBaseToken, livePriceOriented, poolTypeOf,
 } from "../core/context";
 import { getPoolSnapshot } from "../services/poolSnapshot";
-import { NETWORKS } from "../constants";
+import { findSource } from "../constants";
 
 const router = Router();
 
-const POOL_ID_RE = /^0x[0-9a-fA-F]{40}$/;
+// An address, or a bytes32 PoolId on Uniswap V4
+const POOL_ID_RE = /^0x(?:[0-9a-fA-F]{40}|[0-9a-fA-F]{64})$/;
 const CALC_METHODS: CalcMethod[] = ["current", "peak", "average", "custom"];
 const VOLUME_WINDOWS = [7, 21, 30];
 
@@ -44,11 +45,15 @@ router.get(
   async (req: Request<{ network: string; poolId: string }>, res: Response) => {
     const network = req.params.network.toLowerCase();
     const poolId = req.params.poolId.toLowerCase();
-    if (!NETWORKS[network]) return res.status(400).json({ error: "Unknown network" });
+    const exchange = String(req.query.exchange ?? "uniswap-v3").toLowerCase();
+    const source = findSource(exchange, network);
+    if (!source) return res.status(400).json({ error: "Unknown exchange or network" });
+    if (!source.simulator)
+      return res.status(400).json({ error: `Simulation is not available for ${source.exchangeName} on ${source.networkName}` });
     if (!POOL_ID_RE.test(poolId)) return res.status(400).json({ error: "Invalid pool address" });
 
     try {
-      const snap = await getPoolSnapshot(network, poolId);
+      const snap = await getPoolSnapshot(exchange, network, poolId);
       const baseParam = req.query.base;
       const baseToken: 0 | 1 =
         baseParam === "0" ? 0 : baseParam === "1" ? 1 : autoBaseToken(snap);
@@ -64,7 +69,7 @@ router.get(
         poolType === "crypto-stable" ? 0.15 : 0.10;
 
       const cfg: SimulationConfig = {
-        network, poolId, baseToken,
+        exchange, network, poolId, baseToken,
         currentPrice: priceO,
         volume24hUsd: 0,
         lowerPrice: priceO * (1 - rangePct),
@@ -94,9 +99,12 @@ router.post("/simulate", async (req: Request, res: Response) => {
   const isLive = typeof body.poolId === "string" && typeof body.network === "string";
   if (!isLive && (!body.presetId || !PRESET_MAP.has(body.presetId)))
     return res.status(400).json({ error: "Invalid or missing presetId" });
+  const exchange = String(body.exchange ?? "uniswap-v3").toLowerCase();
   if (isLive) {
-    if (!NETWORKS[String(body.network).toLowerCase()])
-      return res.status(400).json({ error: "Unknown network" });
+    const source = findSource(exchange, String(body.network).toLowerCase());
+    if (!source) return res.status(400).json({ error: "Unknown exchange or network" });
+    if (!source.simulator)
+      return res.status(400).json({ error: `Simulation is not available for ${source.exchangeName} on ${source.networkName}` });
     if (!POOL_ID_RE.test(String(body.poolId)))
       return res.status(400).json({ error: "Invalid pool address" });
   }
@@ -117,6 +125,7 @@ router.post("/simulate", async (req: Request, res: Response) => {
 
   const cfg: SimulationConfig = {
     presetId:       isLive ? undefined : body.presetId,
+    exchange:       isLive ? exchange : undefined,
     network:        isLive ? String(body.network).toLowerCase() : undefined,
     poolId:         isLive ? String(body.poolId).toLowerCase() : undefined,
     baseToken:      body.baseToken === 1 ? 1 : body.baseToken === 0 ? 0 : undefined,
@@ -153,7 +162,7 @@ router.post("/simulate", async (req: Request, res: Response) => {
 
   try {
     if (isLive) {
-      const snap = await getPoolSnapshot(cfg.network!, cfg.poolId!);
+      const snap = await getPoolSnapshot(cfg.exchange!, cfg.network!, cfg.poolId!);
       const ctx = buildLiveContext(cfg, snap);
       cfg.volume24hUsd = ctx.volume.avgUsd;
       return finish(runSimulation(cfg, ctx));

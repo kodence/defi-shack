@@ -102,7 +102,7 @@ export default function ConfigPanel({
               <span className={styles.feeTag}>{pool.feeLabel}</span>
             </div>
             <div className={styles.liveMeta}>
-              <span>{pool.networkName}</span>
+              <span>{pool.exchangeName ?? "Uniswap V3"} · {pool.networkName}</span>
               <span>TVL {fmtUsd(pool.tvlUsd)}</span>
               <span>{pool.poolType}</span>
             </div>

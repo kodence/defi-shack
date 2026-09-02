@@ -1,5 +1,6 @@
-import { NETWORKS, STABLECOINS } from "../constants";
+import { STABLECOINS, VALID_EXCHANGES, SourceConfig, sourcesFor } from "../constants";
 import { querySubgraph, fetchAllTokenDayDatas } from "./subgraph";
+import { bundleQuery, poolFeeField, tokenFields } from "./dialect";
 import { SubgraphTokenDayData } from "../types/subgraph";
 import {
   TrackedPosition, TrackedBenchmark, SmartFlag,
@@ -34,14 +35,14 @@ interface RawPosition {
     tick: string | null;
     feeGrowthGlobal0X128: string;
     feeGrowthGlobal1X128: string;
-    token0: { id: string; symbol: string; decimals: string; derivedETH: string };
-    token1: { id: string; symbol: string; decimals: string; derivedETH: string };
+    token0: { id: string; symbol: string; decimals: string; derivedNative: string };
+    token1: { id: string; symbol: string; decimals: string; derivedNative: string };
   };
 }
 
 interface PositionsQueryResponse {
   positions: RawPosition[];
-  bundle: { ethPriceUSD: string } | null;
+  bundle: { nativePriceUSD: string } | null;
 }
 
 // ── Cache (short TTL — tracking should be fresh) ──────────────────────────────
@@ -63,10 +64,21 @@ export async function fetchPositionsFresh(network: string, address: string): Pro
   return fetchPositions(network, address.toLowerCase());
 }
 
+// Every exchange on the network the tracker can read positions from. One
+// failing must not hide positions from the other exchanges; only if all fail
+// is the first error reported.
 async function fetchPositions(network: string, address: string): Promise<TrackedPosition[]> {
-  const config = NETWORKS[network];
-  if (!config) throw new Error(`Unknown network: ${network}`);
-  const url = config.subgraphUrl;
+  const sources = sourcesFor([network], VALID_EXCHANGES, "track");
+  if (!sources.length) throw new Error(`No trackable exchange on ${network}`);
+  const settled = await Promise.allSettled(sources.map(s => fetchPositionsForSource(s, address)));
+  const ok = settled.filter((r): r is PromiseFulfilledResult<TrackedPosition[]> => r.status === "fulfilled");
+  if (!ok.length) throw (settled[0] as PromiseRejectedResult).reason;
+  return ok.flatMap(r => r.value);
+}
+
+async function fetchPositionsForSource(source: SourceConfig, address: string): Promise<TrackedPosition[]> {
+  const url = source.url;
+  const d = source.dialect;
 
   const data = await querySubgraph<PositionsQueryResponse>(`{
     positions(first: 200, where: { owner: "${address}", liquidity_gt: "0" }) {
@@ -79,18 +91,18 @@ async function fetchPositions(network: string, address: string): Promise<Tracked
       tickLower { tickIdx feeGrowthOutside0X128 feeGrowthOutside1X128 }
       tickUpper { tickIdx feeGrowthOutside0X128 feeGrowthOutside1X128 }
       pool {
-        id feeTier tick
+        id ${poolFeeField(d)} tick
         feeGrowthGlobal0X128 feeGrowthGlobal1X128
-        token0 { id symbol decimals derivedETH }
-        token1 { id symbol decimals derivedETH }
+        token0 { ${tokenFields(d)} }
+        token1 { ${tokenFields(d)} }
       }
     }
-    bundle(id: "1") { ethPriceUSD }
+    ${bundleQuery(d)}
   }`, url);
 
   const positions = data.positions.filter(p => p.pool.tick !== null);
   if (!positions.length) return [];
-  const ethUsd = parseFloat(data.bundle?.ethPriceUSD ?? "0");
+  const nativeUsd = parseFloat(data.bundle?.nativePriceUSD ?? "0");
 
   // Entry-day token prices: one batched fetch across all involved tokens
   const tokenIds = new Set<string>();
@@ -103,7 +115,7 @@ async function fetchPositions(network: string, address: string): Promise<Tracked
   }
   const tokenDays = await fetchAllTokenDayDatas([...tokenIds], earliest - 2 * 86_400, url);
 
-  return positions.map(p => computePosition(p, network, config.name, address, ethUsd, tokenDays));
+  return positions.map(p => computePosition(p, source, address, nativeUsd, tokenDays));
 }
 
 // Price of a token on the entry day (tokenDayDatas are date-desc)
@@ -121,12 +133,12 @@ function priceAt(days: SubgraphTokenDayData[] | undefined, ts: number): number |
 
 function computePosition(
   p: RawPosition,
-  network: string,
-  networkName: string,
+  source: SourceConfig,
   owner: string,
-  ethUsd: number,
+  nativeUsd: number,
   tokenDays: Map<string, SubgraphTokenDayData[]>,
 ): TrackedPosition {
+  const { network, networkName } = source;
   const t0 = p.pool.token0, t1 = p.pool.token1;
   const d0 = parseInt(t0.decimals, 10), d1 = parseInt(t1.decimals, 10);
   const tick = parseInt(p.pool.tick!, 10);
@@ -136,9 +148,9 @@ function computePosition(
   // it depending on the pool's tick spacing.
   const fullRange = tickHi - tickLo >= 1_770_000;
 
-  // Current USD prices (derivedETH; day-data fallback)
-  let p0 = parseFloat(t0.derivedETH) * ethUsd;
-  let p1 = parseFloat(t1.derivedETH) * ethUsd;
+  // Current USD prices (derived-native; day-data fallback)
+  let p0 = parseFloat(t0.derivedNative) * nativeUsd;
+  let p1 = parseFloat(t1.derivedNative) * nativeUsd;
   if (p0 <= 0) p0 = priceAt(tokenDays.get(t0.id), Math.floor(Date.now() / 1000)) ?? 0;
   if (p1 <= 0) p1 = priceAt(tokenDays.get(t1.id), Math.floor(Date.now() / 1000)) ?? 0;
 
@@ -255,9 +267,13 @@ function computePosition(
   }
 
   return {
-    positionId: p.id,
+    // NFT token ids collide across the V3 forks on one chain. Uniswap V3 keeps
+    // the bare id so its recorded history stays attached; the others are
+    // namespaced by exchange.
+    positionId: source.exchange === "uniswap-v3" ? p.id : `${source.exchange}:${p.id}`,
     owner,
     network, networkName,
+    exchange: source.exchange, exchangeName: source.exchangeName,
     poolId: p.pool.id,
     poolName: `${baseSymbol} / ${quoteSymbol}`,
     feeLabel: feeLabelOf(parseInt(p.pool.feeTier, 10)),

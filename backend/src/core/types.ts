@@ -21,6 +21,8 @@ export interface SimPoolInfo {
   id:               string;          // presetId or pool address
   network?:         string;          // network key ("ethereum"), live only
   networkName?:     string;          // display name, live only
+  exchange?:        string;          // exchange key ("uniswap-v3"), live only
+  exchangeName?:    string;          // display name, live only
   name:             string;          // "WETH / USDC"
   baseSymbol:       string;
   quoteSymbol:      string;
@@ -48,6 +50,7 @@ export interface DlScenarioInput {
 export interface SimulationConfig {
   // Pool source: either a preset, or a live subgraph pool
   presetId?:      string;
+  exchange?:      string;         // exchange key; defaults to uniswap-v3
   network?:       string;
   poolId?:        string;
   baseToken?:     0 | 1;          // live orientation; omitted = auto

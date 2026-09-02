@@ -1,7 +1,8 @@
 import {
-  NETWORKS, TOP_POOLS_COUNT, TVL_FLOOR, TICK_PAGE_SIZE, TICK_MAX_PAGES,
-  TICK_CONCURRENCY,
+  TOP_POOLS_COUNT, TVL_FLOOR, TICK_PAGE_SIZE, TICK_MAX_PAGES, TICK_CONCURRENCY,
+  GATEWAY_RETRIES, SourceConfig,
 } from "../constants";
+import { bundleQuery, poolFeeField, poolsWhere, tokenFields } from "./dialect";
 import {
   SubgraphPool,
   SubgraphPoolDayData,
@@ -13,8 +14,13 @@ import {
   TokenDayDatasQueryResponse,
 } from "../types/subgraph";
 
-export async function querySubgraph<T>(query: string, subgraphUrl: string = NETWORKS.ethereum.subgraphUrl): Promise<T> {
-  const res = await fetch(subgraphUrl, {
+// Errors worth a retry: the gateway found no healthy indexer for this
+// request, an indexer timed out, or the transport failed. A schema error is
+// deterministic and is thrown straight back.
+const RETRYABLE = /bad indexers|indexer|unavailable|timeout|timed out|fetch failed|ECONNRESET|\b(429|502|503|504)\b/i;
+
+async function querySubgraphOnce<T>(query: string, url: string): Promise<T> {
+  const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ query }),
@@ -29,46 +35,66 @@ export async function querySubgraph<T>(query: string, subgraphUrl: string = NETW
   return json.data as T;
 }
 
-export async function fetchTopPools(subgraphUrl?: string): Promise<TopPoolsResult> {
+export async function querySubgraph<T>(query: string, url: string): Promise<T> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await querySubgraphOnce<T>(query, url);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (attempt >= GATEWAY_RETRIES - 1 || !RETRYABLE.test(msg)) throw e;
+      await new Promise((r) => setTimeout(r, 400 * 2 ** attempt));
+    }
+  }
+}
+
+export async function fetchTopPools(source: SourceConfig): Promise<TopPoolsResult> {
+  const d = source.dialect;
   const batchSize = 100;
   const allPools: SubgraphPool[] = [];
   let skip = 0;
-  let ethPriceUsd = 0;
+  let nativePriceUsd = 0;
+  const where = poolsWhere(d);
 
   while (allPools.length < TOP_POOLS_COUNT) {
+    // The TVL floor is applied here rather than as a `where`: the pages come
+    // back ordered by TVL, so the first pool under the floor ends the walk,
+    // and the older graph-node builds behind some deployments reject a
+    // filtered-and-ordered query outright.
     const data = await querySubgraph<PoolsQueryResponse>(`{
       pools(
         first: ${batchSize}
         skip: ${skip}
         orderBy: totalValueLockedUSD
         orderDirection: desc
-        where: { totalValueLockedUSD_gte: "${TVL_FLOOR}" }
+        ${where}
       ) {
         id
-        feeTier
+        ${poolFeeField(d)}
         tick
         liquidity
         totalValueLockedUSD
-        token0 { id symbol decimals derivedETH }
-        token1 { id symbol decimals derivedETH }
+        token0 { ${tokenFields(d)} }
+        token1 { ${tokenFields(d)} }
       }
-      bundle(id: "1") { ethPriceUSD }
-    }`, subgraphUrl);
+      ${bundleQuery(d)}
+    }`, source.url);
 
-    ethPriceUsd = parseFloat(data.bundle?.ethPriceUSD ?? "0") || ethPriceUsd;
+    nativePriceUsd = parseFloat(data.bundle?.nativePriceUSD ?? "0") || nativePriceUsd;
     if (data.pools.length === 0) break;
-    allPools.push(...data.pools);
+    const above = data.pools.filter((p) => parseFloat(p.totalValueLockedUSD) >= TVL_FLOOR);
+    allPools.push(...above);
+    if (above.length < data.pools.length) break;
     skip += batchSize;
   }
 
-  return { pools: allPools.slice(0, TOP_POOLS_COUNT), ethPriceUsd };
+  return { pools: allPools.slice(0, TOP_POOLS_COUNT), nativePriceUsd };
 }
 
 // Every initialized tick for a pool, ascending. Cursor-paginated on tickIdx
 // rather than skip, which the gateway caps and degrades on.
 export async function fetchPoolTicks(
   poolId: string,
-  subgraphUrl?: string
+  url: string
 ): Promise<{ ticks: SubgraphTickLite[]; clipped: boolean }> {
   const ticks: SubgraphTickLite[] = [];
   let cursor = -887300;
@@ -81,7 +107,7 @@ export async function fetchPoolTicks(
         orderDirection: asc
         where: { pool: "${poolId}", tickIdx_gt: ${cursor}, liquidityNet_not: "0" }
       ) { tickIdx liquidityNet }
-    }`, subgraphUrl);
+    }`, url);
 
     ticks.push(...data.ticks);
     if (data.ticks.length < TICK_PAGE_SIZE) return { ticks, clipped: false };
@@ -94,14 +120,15 @@ export async function fetchPoolTicks(
 
 export async function fetchAllPoolTicks(
   poolIds: string[],
-  subgraphUrl?: string
+  url: string,
+  concurrency: number = TICK_CONCURRENCY
 ): Promise<Map<string, { ticks: SubgraphTickLite[]; clipped: boolean }>> {
   const result = new Map<string, { ticks: SubgraphTickLite[]; clipped: boolean }>();
 
-  for (let i = 0; i < poolIds.length; i += TICK_CONCURRENCY) {
-    const batch = poolIds.slice(i, i + TICK_CONCURRENCY);
+  for (let i = 0; i < poolIds.length; i += concurrency) {
+    const batch = poolIds.slice(i, i + concurrency);
     const settled = await Promise.allSettled(
-      batch.map((id) => fetchPoolTicks(id, subgraphUrl))
+      batch.map((id) => fetchPoolTicks(id, url))
     );
     batch.forEach((id, idx) => {
       const r = settled[idx];
@@ -116,7 +143,7 @@ export async function fetchAllPoolTicks(
 export async function fetchPoolDayDatas(
   poolId: string,
   startTimestamp: number,
-  subgraphUrl?: string
+  url: string
 ): Promise<SubgraphPoolDayData[]> {
   const data = await querySubgraph<PoolDayDatasQueryResponse>(`{
     poolDayDatas(
@@ -130,14 +157,14 @@ export async function fetchPoolDayDatas(
       volumeUSD
       tvlUSD
     }
-  }`, subgraphUrl);
+  }`, url);
   return data.poolDayDatas;
 }
 
 export async function fetchTokenDayDatas(
   tokenId: string,
   startTimestamp: number,
-  subgraphUrl?: string
+  url: string
 ): Promise<SubgraphTokenDayData[]> {
   const data = await querySubgraph<TokenDayDatasQueryResponse>(`{
     tokenDayDatas(
@@ -149,45 +176,56 @@ export async function fetchTokenDayDatas(
       date
       priceUSD
     }
-  }`, subgraphUrl);
+  }`, url);
   return data.tokenDayDatas;
 }
 
-// Batch fetch pool day datas for multiple pools in parallel with concurrency limit
+// Batch fetch pool day datas for multiple pools in parallel. A pool whose
+// request fails (after the gateway retries) is left out of the map rather
+// than failing the source; the caller drops it, since a row with no day
+// data would read as a pool earning nothing.
 export async function fetchAllPoolDayDatas(
   poolIds: string[],
   startTimestamp: number,
-  subgraphUrl?: string
+  url: string,
+  concurrency = 10
 ): Promise<Map<string, SubgraphPoolDayData[]>> {
   const result = new Map<string, SubgraphPoolDayData[]>();
-  const concurrency = 10;
 
   for (let i = 0; i < poolIds.length; i += concurrency) {
     const batch = poolIds.slice(i, i + concurrency);
-    const results = await Promise.all(
-      batch.map((id) => fetchPoolDayDatas(id, startTimestamp, subgraphUrl))
+    const settled = await Promise.allSettled(
+      batch.map((id) => fetchPoolDayDatas(id, startTimestamp, url))
     );
-    batch.forEach((id, idx) => result.set(id, results[idx]));
+    batch.forEach((id, idx) => {
+      const r = settled[idx];
+      if (r.status === "fulfilled") result.set(id, r.value);
+    });
   }
 
   return result;
 }
 
-// Batch fetch token day datas for multiple tokens in parallel with concurrency limit
+// Batch fetch token day datas for multiple tokens in parallel. A token whose
+// request fails is left out; the metrics that need it fall back to their
+// no-data values for the pools involved.
 export async function fetchAllTokenDayDatas(
   tokenIds: string[],
   startTimestamp: number,
-  subgraphUrl?: string
+  url: string,
+  concurrency = 10
 ): Promise<Map<string, SubgraphTokenDayData[]>> {
   const result = new Map<string, SubgraphTokenDayData[]>();
-  const concurrency = 10;
 
   for (let i = 0; i < tokenIds.length; i += concurrency) {
     const batch = tokenIds.slice(i, i + concurrency);
-    const results = await Promise.all(
-      batch.map((id) => fetchTokenDayDatas(id, startTimestamp, subgraphUrl))
+    const settled = await Promise.allSettled(
+      batch.map((id) => fetchTokenDayDatas(id, startTimestamp, url))
     );
-    batch.forEach((id, idx) => result.set(id, results[idx]));
+    batch.forEach((id, idx) => {
+      const r = settled[idx];
+      if (r.status === "fulfilled") result.set(id, r.value);
+    });
   }
 
   return result;

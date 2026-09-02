@@ -1,141 +1,33 @@
 import { Router, Request, Response } from "express";
 import {
-  VALID_TIMEFRAMES, Timeframe, NETWORKS, VALID_NETWORKS, TVL_CEILING,
+  VALID_TIMEFRAMES, Timeframe, VALID_NETWORKS, VALID_EXCHANGES, sourcesFor, SourceConfig,
 } from "../constants";
 import { getCached, setCache } from "../services/cache";
-import {
-  fetchTopPools,
-  fetchAllPoolDayDatas,
-  fetchAllTokenDayDatas,
-  fetchAllPoolTicks,
-} from "../services/subgraph";
-import { computePoolLiquidity } from "../services/poolLiquidity";
-import {
-  computeAvgDailyFees,
-  computeAvgDailyVolume,
-  computeAvgDailyTVL,
-  computeAPRFromSeries,
-  computeVolatility,
-  computeCorrelation,
-  computeFeeToTvl,
-  computeVolumeCV,
-  computeCorrelationWindow,
-  getVolatilityTokenId,
-  usableDays,
-} from "../services/metrics";
+import { fetchSubgraphDiscovery } from "../services/sources/subgraphDiscovery";
+import { fetchPancakeExplorerDiscovery } from "../services/sources/pancakeExplorer";
+import { fetchOrcaDiscovery } from "../services/sources/orca";
+import { fetchMessariDiscovery } from "../services/sources/messari";
 import { ComputedPool, ApiResponse } from "../types/pool";
 
 const router = Router();
 
-function formatFeeTier(feeTier: string): string {
-  const bps = parseInt(feeTier, 10);
-  return `${bps / 10000}%`;
+function parseList(param: unknown, valid: string[], fallback: string[]): string[] | null {
+  if (!param || typeof param !== "string") return fallback;
+  const keys = param.split(",").map((n) => n.trim().toLowerCase()).filter(Boolean);
+  if (!keys.length) return fallback;
+  for (const k of keys) {
+    if (!valid.includes(k)) return null;
+  }
+  return keys;
 }
 
-function parseNetworks(param: unknown): string[] | null {
-  if (!param || typeof param !== "string") return ["ethereum"];
-  const networks = param.split(",").map((n) => n.trim().toLowerCase());
-  for (const n of networks) {
-    if (!VALID_NETWORKS.includes(n)) return null;
+function fetchSource(source: SourceConfig, timeframe: Timeframe, startTimestamp: number): Promise<ComputedPool[]> {
+  switch (source.kind) {
+    case "subgraph":         return fetchSubgraphDiscovery(source, timeframe, startTimestamp);
+    case "messari":          return fetchMessariDiscovery(source, timeframe, startTimestamp);
+    case "pancake-explorer": return fetchPancakeExplorerDiscovery(source, timeframe, startTimestamp);
+    case "orca":             return fetchOrcaDiscovery(source, timeframe);
   }
-  return networks;
-}
-
-async function fetchPoolsForNetwork(
-  networkKey: string,
-  timeframe: Timeframe,
-  startTimestamp: number
-): Promise<ComputedPool[]> {
-  const config = NETWORKS[networkKey];
-  const subgraphUrl = config.subgraphUrl;
-
-  // Step 1: Fetch top pools, discarding ones whose reported TVL is not credible
-  const { pools: allPools, ethPriceUsd } = await fetchTopPools(subgraphUrl);
-  const pools = allPools.filter(
-    (p) => parseFloat(p.totalValueLockedUSD) <= TVL_CEILING
-  );
-
-  // Step 2: Fetch pool day datas for all pools
-  const poolIds = pools.map((p) => p.id);
-  const poolDayDatasMap = await fetchAllPoolDayDatas(poolIds, startTimestamp, subgraphUrl);
-
-  // Step 3: Collect unique token IDs needed for volatility + correlation
-  const tokenIds = new Set<string>();
-  for (const pool of pools) {
-    tokenIds.add(pool.token0.id);
-    tokenIds.add(pool.token1.id);
-  }
-
-  // Step 4: Fetch token day datas
-  const tokenDayDatasMap = await fetchAllTokenDayDatas(
-    [...tokenIds],
-    startTimestamp,
-    subgraphUrl
-  );
-
-  // Step 5: Rebuild real TVL from tick liquidity. The subgraph's own TVL
-  // fields drift 2-11x above what positions actually hold, which understates
-  // every APR by the same factor.
-  const tickMap = await fetchAllPoolTicks(poolIds, subgraphUrl);
-
-  // Step 6: Compute metrics for each pool
-  return pools.map((pool) => {
-    const dayDatas = usableDays(poolDayDatasMap.get(pool.id) || []);
-    const avgDailyFees = computeAvgDailyFees(dayDatas);
-    const avgDailyVolume = computeAvgDailyVolume(dayDatas);
-    const subgraphAvgTVL = computeAvgDailyTVL(dayDatas);
-
-    // Only current liquidity can be reconstructed, but the daily TVL series is
-    // wrong by a roughly constant factor, so rescaling it to the reconstructed
-    // level keeps the day-to-day shape while fixing the level.
-    const tickData = tickMap.get(pool.id);
-    const liq = tickData && !tickData.clipped
-      ? computePoolLiquidity(pool, tickData.ticks, ethPriceUsd)
-      : null;
-    const subgraphCurrentTVL = parseFloat(pool.totalValueLockedUSD);
-    const scale = liq && subgraphCurrentTVL > 0
-      ? liq.tvlUsd / subgraphCurrentTVL
-      : 1;
-
-    const avgDailyTVL = subgraphAvgTVL * scale;
-    const apr = computeAPRFromSeries(dayDatas, scale);
-
-    const volatilityTokenId = getVolatilityTokenId(pool.token0, pool.token1);
-    const volatilityData = tokenDayDatasMap.get(volatilityTokenId) || [];
-    const priceVolatility = computeVolatility(volatilityData);
-
-    const token0Prices = tokenDayDatasMap.get(pool.token0.id) || [];
-    const token1Prices = tokenDayDatasMap.get(pool.token1.id) || [];
-    const correlation = computeCorrelation(token0Prices, token1Prices);
-    const correlation7d = computeCorrelationWindow(token0Prices, token1Prices, 7);
-    const correlation30d = computeCorrelationWindow(token0Prices, token1Prices, Math.min(30, timeframe));
-
-    const feeTierStr = formatFeeTier(pool.feeTier);
-
-    return {
-      id: pool.id,
-      poolName: `${pool.token0.symbol} / ${pool.token1.symbol} (${feeTierStr})`,
-      token0: { id: pool.token0.id, symbol: pool.token0.symbol },
-      token1: { id: pool.token1.id, symbol: pool.token1.symbol },
-      feeTier: parseInt(pool.feeTier, 10),
-      exchange: config.exchange,
-      network: config.name,
-      networkId: networkKey,
-      // Averaged over the timeframe, matching the APR denominator. Reporting
-      // current TVL here instead leaves the row unable to reconcile.
-      tvl: avgDailyTVL,
-      tvlSource: liq ? "liquidity" : "subgraph",
-      apr,
-      avgDailyFees,
-      avgDailyVolume,
-      priceVolatility,
-      correlation,
-      feeToTvlPct: computeFeeToTvl(avgDailyFees, avgDailyTVL),
-      volumeCV: computeVolumeCV(dayDatas),
-      correlation7d,
-      correlation30d,
-    };
-  });
 }
 
 router.get("/", async (req: Request, res: Response) => {
@@ -150,16 +42,29 @@ router.get("/", async (req: Request, res: Response) => {
 
   const timeframe = timeframeParam as Timeframe;
 
-  const networks = parseNetworks(req.query.networks);
+  const networks = parseList(req.query.networks, VALID_NETWORKS, ["ethereum"]);
   if (!networks) {
     res.status(400).json({
       error: `networks must be comma-separated list of: ${VALID_NETWORKS.join(", ")}`,
     });
     return;
   }
+  const exchanges = parseList(req.query.exchanges, VALID_EXCHANGES, VALID_EXCHANGES);
+  if (!exchanges) {
+    res.status(400).json({
+      error: `exchanges must be comma-separated list of: ${VALID_EXCHANGES.join(", ")}`,
+    });
+    return;
+  }
+
+  const sources = sourcesFor(networks, exchanges, "discovery");
+  if (!sources.length) {
+    res.status(400).json({ error: "None of the selected exchanges are available on the selected networks" });
+    return;
+  }
 
   // Check cache
-  const cached = getCached(timeframe, networks);
+  const cached = getCached(timeframe, networks, exchanges);
   if (cached) {
     const response: ApiResponse = {
       data: cached.data,
@@ -167,6 +72,7 @@ router.get("/", async (req: Request, res: Response) => {
         timeframe,
         poolCount: cached.data.length,
         fetchedAt: cached.fetchedAt.toISOString(),
+        errors: cached.errors,
       },
     };
     res.json(response);
@@ -177,15 +83,31 @@ router.get("/", async (req: Request, res: Response) => {
     const now = Math.floor(Date.now() / 1000);
     const startTimestamp = now - timeframe * 24 * 60 * 60;
 
-    // Fetch pools from all selected networks in parallel
-    const networkResults = await Promise.all(
-      networks.map((n) => fetchPoolsForNetwork(n, timeframe, startTimestamp))
+    // Every source in parallel. One failing -- a flaky indexer, a REST API
+    // timing out -- must not blank the whole table, so failures are reported
+    // beside the rows that did arrive rather than replacing them.
+    const settled = await Promise.allSettled(
+      sources.map((s) => fetchSource(s, timeframe, startTimestamp))
     );
 
-    const computedPools: ComputedPool[] = networkResults.flat();
+    const computedPools: ComputedPool[] = [];
+    const errors: { source: string; error: string }[] = [];
+    settled.forEach((r, i) => {
+      if (r.status === "fulfilled") {
+        computedPools.push(...r.value);
+      } else {
+        const msg = r.reason instanceof Error ? r.reason.message : String(r.reason);
+        console.error(`[pools] ${sources[i].key}: ${msg}`);
+        errors.push({ source: `${sources[i].exchangeName} on ${sources[i].networkName}`, error: msg.slice(0, 200) });
+      }
+    });
 
-    // Cache the result
-    setCache(timeframe, networks, computedPools);
+    if (!computedPools.length && errors.length) {
+      res.status(502).json({ error: "Every selected source failed", errors });
+      return;
+    }
+
+    setCache(timeframe, networks, exchanges, computedPools, errors);
 
     const response: ApiResponse = {
       data: computedPools,
@@ -193,13 +115,16 @@ router.get("/", async (req: Request, res: Response) => {
         timeframe,
         poolCount: computedPools.length,
         fetchedAt: new Date().toISOString(),
+        errors: errors.length ? errors : undefined,
       },
     };
 
     res.json(response);
   } catch (error) {
-    console.error("Failed to fetch pool data:", error);
-    res.status(500).json({ error: "Failed to fetch pool data" });
+    console.error("Error fetching pools:", error);
+    res.status(500).json({
+      error: error instanceof Error ? error.message : "Internal server error",
+    });
   }
 });
 

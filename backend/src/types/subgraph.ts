@@ -1,10 +1,13 @@
-// Raw response types from The Graph Uniswap V3 Subgraph
+// Raw response types from the V3-schema subgraphs. The dialect layer aliases
+// each fork's differing field names onto these, so `derivedNative` is
+// derivedETH on Uniswap, derivedMatic on QuickSwap and derivedNative on
+// HyperSwap, and `nativePriceUSD` is the matching bundle price.
 
 export interface SubgraphToken {
   id: string;
   symbol: string;
   decimals: string;
-  derivedETH: string;
+  derivedNative: string;
 }
 
 export interface SubgraphPool {
@@ -26,7 +29,7 @@ export interface SubgraphTickLite {
 
 export interface TopPoolsResult {
   pools: SubgraphPool[];
-  ethPriceUsd: number;
+  nativePriceUsd: number;
 }
 
 export interface SubgraphPoolDayData {
@@ -47,7 +50,7 @@ export interface SubgraphTokenFull {
   id: string;
   symbol: string;
   decimals: string;
-  derivedETH: string;
+  derivedNative: string;
 }
 
 export interface SubgraphPoolFull {
@@ -76,7 +79,7 @@ export interface SubgraphPoolDayDataFull extends SubgraphPoolDayData {
 
 export interface PoolMetaQueryResponse {
   pool: SubgraphPoolFull | null;
-  bundle: { ethPriceUSD: string } | null;
+  bundle: { nativePriceUSD: string } | null;
 }
 
 export interface PoolSnapshotQueryResponse {
@@ -93,7 +96,7 @@ export interface TicksPageQueryResponse {
 
 export interface PoolsQueryResponse {
   pools: SubgraphPool[];
-  bundle: { ethPriceUSD: string } | null;
+  bundle: { nativePriceUSD: string } | null;
 }
 
 export interface PoolDayDatasQueryResponse {

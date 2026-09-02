@@ -5,7 +5,7 @@ import Link from "next/link";
 import { TrackedPosition } from "@/types/track";
 import { api } from "@/lib/api";
 import { formatUSD } from "@/utils/format";
-import { NETWORKS } from "@/utils/constants";
+import { TRACK_NETWORKS } from "@/utils/constants";
 import CustomPositions from "@/components/track/CustomPositions";
 import PositionHistoryPanel from "@/components/track/PositionHistoryPanel";
 
@@ -59,7 +59,7 @@ function RangeBar({ p }: { p: TrackedPosition }) {
 
 export default function TrackPage() {
   const [address, setAddress] = useState("");
-  const [networks, setNetworks] = useState<string[]>(NETWORKS.map(n => n.key));
+  const [networks, setNetworks] = useState<string[]>(TRACK_NETWORKS.map(n => n.key));
   const [positions, setPositions] = useState<TrackedPosition[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -114,7 +114,7 @@ export default function TrackPage() {
         ?? localStorage.getItem("lpsim.track.address");   // pre-rename key
       if (saved && ADDRESS_RE.test(saved)) {
         setAddress(saved);
-        load(saved, NETWORKS.map(n => n.key));
+        load(saved, TRACK_NETWORKS.map(n => n.key));
       }
     } catch {}
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -171,7 +171,7 @@ export default function TrackPage() {
             )}
           </div>
           <div className="is-flex is-flex-wrap-wrap" style={{ gap: "1rem" }}>
-            {NETWORKS.map(n => (
+            {TRACK_NETWORKS.map(n => (
               <label key={n.key} className="checkbox is-size-7">
                 <input
                   type="checkbox"
@@ -197,7 +197,7 @@ export default function TrackPage() {
 
         {positions !== null && positions.length === 0 && !loading && (
           <div className="notification is-light">
-            No active Uniswap V3 positions found for this wallet on the selected networks.
+            No active concentrated-liquidity positions found for this wallet on the selected networks.
           </div>
         )}
 
@@ -220,7 +220,7 @@ export default function TrackPage() {
                       <div className="is-flex is-align-items-center is-flex-wrap-wrap mb-2" style={{ gap: "0.5rem" }}>
                         <strong className="is-size-5">{p.poolName}</strong>
                         <span className="tag is-warning is-light">{p.feeLabel}</span>
-                        <span className="tag is-light">{p.networkName}</span>
+                        <span className="tag is-light">{p.exchangeName} · {p.networkName}</span>
                         <span className="tag is-light">#{p.positionId}</span>
                         <span className={`tag ${p.inRange ? "is-success" : "is-danger"}`}>
                           {p.inRange ? "In range" : "Out of range"}
@@ -302,7 +302,7 @@ export default function TrackPage() {
 
                       <Link
                         className="button is-small is-link is-outlined"
-                        href={`/simulator?network=${p.network}&pool=${p.poolId}`}
+                        href={`/simulator?network=${p.network}&pool=${p.poolId}${p.exchange !== "uniswap-v3" ? `&exchange=${p.exchange}` : ""}`}
                       >
                         Simulate this pool
                       </Link>
