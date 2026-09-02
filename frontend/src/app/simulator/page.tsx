@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import ConfigPanel     from "@/components/simulator/ConfigPanel";
 import MetricCards     from "@/components/simulator/MetricCards";
 import RangeChart      from "@/components/simulator/RangeChart";
+import RangePresets    from "@/components/simulator/RangePresets";
 import ScenarioTable   from "@/components/simulator/ScenarioTable";
 import PriceChart      from "@/components/simulator/PriceChart";
 import LiquidityChart  from "@/components/simulator/LiquidityChart";
@@ -217,6 +218,7 @@ function SimulatorInner() {
                   )}
                 </div>
                 <div className={styles.rightCol}>
+                  <RangePresets presets={result.rangePresets} onChange={handleChange} />
                   <RangeChart data={result.rangeChart} cfg={cfg} />
                   <ScenarioTable rows={result.scenarios} pool={pool} />
                   <DivergencePanel

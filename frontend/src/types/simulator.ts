@@ -179,6 +179,18 @@ export interface DivergenceResult {
   scenarios:   DivergenceScenario[];
 }
 
+// The same position priced at a handful of standard widths. A pool-level APR
+// cannot know the range you pick, and the answer moves by multiples across
+// these rows, so this is the bridge between screening and a real estimate.
+export interface RangePreset {
+  widthPct:       number;   // 0.05 = +/-5% around the current price
+  lowerPrice:     number;
+  upperPrice:     number;
+  apr:            number;
+  inRangeProb30d: number;   // the counterweight: tighter earns more, exits sooner
+  isCurrent:      boolean;
+}
+
 export interface RangeGuard {
   windowDays:       number;
   historyDays:      number;
@@ -205,6 +217,7 @@ export interface SimulationResult {
   liquidity:    LiquidityDistribution | null;
   divergence:   DivergenceResult;
   rangeGuard:   RangeGuard;
+  rangePresets: RangePreset[];
 }
 
 export interface LivePoolDefault {

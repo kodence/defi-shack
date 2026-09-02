@@ -170,6 +170,19 @@ export interface LiquidityDistribution {
   clipped:      boolean;            // tick window hit the page cap
 }
 
+// ── Range presets ─────────────────────────────────────────────────────────────
+// The same position priced at a handful of standard widths. A pool-level APR
+// cannot know the range you pick, and the answer moves by multiples across
+// these rows, so this is the bridge between screening and a real estimate.
+export interface RangePreset {
+  widthPct:       number;   // 0.05 = +/-5% around the current price
+  lowerPrice:     number;
+  upperPrice:     number;
+  apr:            number;
+  inRangeProb30d: number;   // the counterweight: tighter earns more, exits sooner
+  isCurrent:      boolean;
+}
+
 // ── Range guard (RANGE framework: notable fluctuations) ───────────────────────
 export interface RangeGuard {
   windowDays:       number;   // holding-period move window analyzed
@@ -220,4 +233,5 @@ export interface SimulationResult {
   liquidity:    LiquidityDistribution | null;  // null in preset mode
   divergence:   DivergenceResult;
   rangeGuard:   RangeGuard;
+  rangePresets: RangePreset[];
 }

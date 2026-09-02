@@ -2,7 +2,7 @@ import {
   SimulationConfig, SimulationResult, PositionMetrics, AprBreakdown,
   ChartPoint, ScenarioRow, AprHistoryResult, DailyAprSample,
   LiquidityDistribution, DivergenceResult, DivergenceScenario, DlScenarioInput,
-  CalcMethod, RangeGuard,
+  CalcMethod, RangeGuard, RangePreset,
 } from "./types";
 import { SimContext, clampMoveWindow } from "./context";
 import {
@@ -366,6 +366,30 @@ export function buildRangeGuard(cfg: SimulationConfig, ctx: SimContext): RangeGu
   };
 }
 
+// ── Range presets ─────────────────────────────────────────────────────────────
+// Widths mirror the pills in the config panel so a row can be applied directly.
+const PRESET_WIDTHS = [0.005, 0.01, 0.02, 0.05, 0.10, 0.25];
+
+export function buildRangePresets(cfg: SimulationConfig, ctx: SimContext): RangePreset[] {
+  const price = cfg.currentPrice;
+  if (!(price > 0)) return [];
+  const currentWidth = (cfg.upperPrice - cfg.lowerPrice) / 2 / price;
+
+  return PRESET_WIDTHS.map((widthPct) => {
+    const lowerPrice = price * (1 - widthPct);
+    const upperPrice = price * (1 + widthPct);
+    // Reuse the full metric path so presets inherit the calculation method,
+    // volume window and deposit size the user has already chosen.
+    const { metrics } = computeMetrics({ ...cfg, lowerPrice, upperPrice }, ctx);
+    return {
+      widthPct, lowerPrice, upperPrice,
+      apr: metrics.estimatedApr,
+      inRangeProb30d: metrics.inRangeProb30d,
+      isCurrent: Math.abs(currentWidth - widthPct) < 0.001,
+    };
+  });
+}
+
 // ── Full simulation ───────────────────────────────────────────────────────────
 export function runSimulation(cfg: SimulationConfig, ctx: SimContext): SimulationResult {
   const { metrics, aprBreakdown, calcPrice } = computeMetrics(cfg, ctx);
@@ -382,5 +406,6 @@ export function runSimulation(cfg: SimulationConfig, ctx: SimContext): Simulatio
     liquidity: buildDistribution(cfg, ctx, calcPrice),
     divergence: buildDivergence(cfg, ctx, metrics),
     rangeGuard: buildRangeGuard(cfg, ctx),
+    rangePresets: buildRangePresets(cfg, ctx),
   };
 }

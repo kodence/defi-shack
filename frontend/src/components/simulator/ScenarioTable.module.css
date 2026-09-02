@@ -14,16 +14,16 @@
 .tbl tbody tr:hover { background: var(--bg-elevated); }
 .inRange  { background: rgba(63,185,80,.04); }
 .current  { background: rgba(56,139,253,.07); font-weight: 600; }
-.tbl td   { padding: 8px; text-align: right; color: var(--ts); white-space: nowrap; }
+.tbl td { padding: 8px; text-align: right; color: var(--ts); white-space: nowrap; }
 .tbl td:first-child { text-align: left; }
-.tdPrice { font-weight: 600; color: var(--tx); font-size: 12px; }
-.up   { color: var(--green); }
-.dn   { color: var(--red); }
-.zero { color: var(--tm); }
-.tdIL   { color: var(--red); }
-.tdFee  { color: var(--green); }
-.netPos { color: var(--green); font-weight: 600; }
-.netNeg { color: var(--red);   font-weight: 600; }
-.dash   { color: var(--tm); }
+.tbl .tdPrice { font-weight: 600; color: var(--tx); font-size: 12px; }
+.tbl .up   { color: var(--green); }
+.tbl .dn   { color: var(--red); }
+.tbl .zero { color: var(--tm); }
+.tbl .tdIL   { color: var(--red); }
+.tbl .tdFee  { color: var(--green); }
+.tbl .netPos { color: var(--green); font-weight: 600; }
+.tbl .netNeg { color: var(--red);   font-weight: 600; }
+.tbl .dash   { color: var(--tm); }
 .inTag  { display: inline-block; padding: 1px 5px; border-radius: 3px; font-size: 9px; font-weight: 600; background: var(--green-bg); color: var(--green); border: 1px solid rgba(63,185,80,.25); margin-left: 4px; }
 .outTag { display: inline-block; padding: 1px 5px; border-radius: 3px; font-size: 9px; font-weight: 600; background: var(--bg-elevated); color: var(--tm); border: 1px solid var(--border); margin-left: 4px; }

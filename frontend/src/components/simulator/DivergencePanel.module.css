@@ -33,11 +33,11 @@
 .tbl td { padding: 6px; text-align: right; color: var(--ts); white-space: nowrap; }
 .tbl td:first-child { text-align: left; }
 .customRow { background: rgba(56,139,253,.07); }
-.tdLabel { font-weight: 500; color: var(--tx); }
+.tbl .tdLabel { font-weight: 500; color: var(--tx); }
 .moves { font-size: 9px; color: var(--tm); margin-top: 1px; }
-.tdDl { color: var(--red); }
-.up { color: var(--green); }
-.dn { color: var(--red); }
+.tbl .tdDl { color: var(--red); }
+.tbl .up { color: var(--green); }
+.tbl .dn { color: var(--red); }
 
 .histTag {
   display: inline-block; margin-left: 5px; padding: 0 4px; border-radius: 3px;
