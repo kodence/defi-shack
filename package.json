@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:backend": "cd backend && npm run dev",
-    "dev:frontend": "cd frontend && npm run dev"
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:stop": "node tools/dev-stop.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

@@ -12,6 +12,9 @@ npm run dev
 npm run dev:backend    # Express on http://localhost:3001 (tsx watch, auto-reloads)
 npm run dev:frontend   # Next.js on http://localhost:3000 (Turbopack)
 
+# Stop everything `npm run dev` started
+npm run dev:stop       # tree-kills the dev processes and frees 3000/3001
+
 # Build
 cd backend && npm run build    # tsc → dist/
 cd frontend && npm run build   # next build
