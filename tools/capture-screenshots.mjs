@@ -7,7 +7,7 @@
 //   node tools/capture-screenshots.mjs
 //   node tools/capture-screenshots.mjs --only=track,simulator
 //
-// Groups: discovery, simulator, portfolio, track. Limiting the run avoids
+// Groups: discovery, simulator, presets, portfolio, track. Limiting the run avoids
 // regenerating figures whose captions quote numbers that would then drift.
 //
 // Output: tools/screenshots/*.png at 2x for legible text.
@@ -196,7 +196,7 @@ async function main() {
     }
 
     // ── Simulator ────────────────────────────────────────────────────────────
-    if (wants("simulator") || wants("portfolio")) {
+    if (wants("simulator") || wants("presets") || wants("portfolio")) {
     console.log("Simulator...");
     await cdp.goto(`${APP}${POOL_A}`);
     await cdp.waitFor("svg");
@@ -215,6 +215,7 @@ async function main() {
       __mark('Liquidity distribution', 'liq');
       __mark('Divergence loss', 'dl');
       __mark('VALID checklist', 'valid');
+      __mark('Range presets', 'presets');
       return true;
     })()`);
     if (wants("simulator")) {
@@ -223,6 +224,11 @@ async function main() {
       await cdp.shot("liquidity", '[data-shot="liq"]');
       await cdp.shot("divergence", '[data-shot="dl"]');
       await cdp.shot("valid", '[data-shot="valid"]');
+    }
+    // Its own group: the captions above quote live numbers, so re-shooting the
+    // presets card should not force those to be re-checked as well.
+    if (wants("presets")) {
+      await cdp.shot("presets", '[data-shot="presets"]');
     }
     }
 
